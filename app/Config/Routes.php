@@ -12,5 +12,10 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
 	$routes->options('(:any)', static function () {
 		return Services::response()->setStatusCode(204);
 	});
+
+	// Documentación
+	$routes->get('docs', 'Docs::index');
+
+	// Rutas de la API
 	$routes->post('login', 'Auth::login');
 });
