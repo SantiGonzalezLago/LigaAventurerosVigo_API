@@ -13,6 +13,7 @@ class UserModel extends Model {
     'uid',
     'email',
     'name',
+    'avatar',
     'verified',
     'master',
     'admin',
@@ -25,6 +26,12 @@ class UserModel extends Model {
   public function getUser(string $uid): ?object {
     $builder = $this->db->table($this->table);
     $builder->where('uid', $uid);
+    return $builder->get()->getRow();
+  }
+
+  public function getUserByEmail(string $email): ?object {
+    $builder = $this->db->table($this->table);
+    $builder->where('email', $email);
     return $builder->get()->getRow();
   }
 

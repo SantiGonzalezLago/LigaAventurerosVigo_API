@@ -12,6 +12,41 @@ use Firebase\JWT\ExpiredException;
 
 class Auth implements FilterInterface {
 
+  private function getAuthorizationHeader(RequestInterface $request): ?string {
+    $authHeader = trim($request->getHeaderLine('Authorization'));
+
+    if ($authHeader !== '') {
+      return $authHeader;
+    }
+
+    $serverCandidates = [
+      'HTTP_AUTHORIZATION',
+      'REDIRECT_HTTP_AUTHORIZATION',
+    ];
+
+    foreach ($serverCandidates as $key) {
+      $value = $request->getServer($key);
+
+      if (is_string($value) && trim($value) !== '') {
+        return trim($value);
+      }
+    }
+
+    if (function_exists('apache_request_headers')) {
+      $headers = apache_request_headers();
+
+      if (is_array($headers)) {
+        foreach ($headers as $name => $value) {
+          if (strcasecmp((string) $name, 'Authorization') === 0 && is_string($value) && trim($value) !== '') {
+            return trim($value);
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
   /**
    * Verificar token JWT antes de permitir acceso
    */
@@ -19,7 +54,7 @@ class Auth implements FilterInterface {
     $response = service('response');
 
     // Obtener el header Authorization
-    $authHeader = $request->getHeaderLine('Authorization');
+    $authHeader = $this->getAuthorizationHeader($request);
 
     if (empty($authHeader)) {
       return $response->setJSON([

@@ -24,7 +24,7 @@ class Auth extends BaseController {
    * - password (string): contraseña en texto plano.
    *
    * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, verified, master, admin } }
+   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
    * - 400: { message: "error", error: "Usuario y contraseña son obligatorios" }
    * - 401: { message: "error", error: "Usuario o contraseña incorrectos" }
    * - 403: { message: "error", error: "El usuario está baneado" }
@@ -39,7 +39,7 @@ class Auth extends BaseController {
       ], 400);
     }
 
-    $user = $this->userModel->where('email', $email)->first();
+    $user = $this->userModel->getUserByEmail($email);
 
     if (!$user || !password_verify($password, $user->password)) {
       return $this->respond([
@@ -61,16 +61,68 @@ class Auth extends BaseController {
     return $this->respond($response, 200);
   }
 
+  /**
+   * Endpoint: GET /v1/me
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   *
+   * Devuelve:
+   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+   * - 401: { message: "No autorizado" }
+   */
+  public function me() {
+    $uid = $this->getUserUidFromJwt();
+
+    if (empty($uid)) {
+      return $this->respond([
+        'message' => 'No autorizado',
+      ], 401);
+    }
+
+    $user = $this->userModel->getUser($uid);
+
+    if (!$user || (int) $user->banned === 1) {
+      return $this->respond([
+        'message' => 'No autorizado',
+      ], 401);
+    }
+
+    return $this->respond([
+      'message' => 'ok',
+      'user' => $this->generateUserdata($user),
+    ], 200);
+  }
+
   private function generateUserdata($user) {
     return [
       'uid' => $user->uid,
       'jwt' => $this->generateJWT($user),
       'name' => $user->name,
       'email' => $user->email,
-      'verified' => $user->verified,
-      'master' => $user->master,
-      'admin' => $user->admin,
+      'avatar' => $this->buildAvatarUrl($user->avatar ?? null),
+      'verified' => (bool) $user->verified,
+      'master' => (bool) $user->master,
+      'admin' => (bool) $user->admin,
     ];
+  }
+
+  private function buildAvatarUrl(?string $avatarPath): ?string {
+    if (empty($avatarPath)) {
+      return null;
+    }
+
+    if (filter_var($avatarPath, FILTER_VALIDATE_URL) !== false) {
+      return $avatarPath;
+    }
+
+    $normalizedPath = '/' . ltrim($avatarPath, '/');
+
+    if (!str_starts_with($normalizedPath, '/images/avatar/')) {
+      $normalizedPath = '/images/avatar/' . ltrim($avatarPath, '/');
+    }
+
+    return rtrim(base_url(), '/') . $normalizedPath;
   }
 
   /**
@@ -105,8 +157,8 @@ class Auth extends BaseController {
    * Recibe:
    * - id_token (string): ID token de Google obtenido en el cliente.
    *
-   * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, verified, master, admin } }
+    * Devuelve:
+    * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
    * - 400: { message: "error", error: "El token de Google es obligatorio" }
    * - 401: { message: "error", error: "Token de Google inválido o expirado" }
    * - 403: { message: "error", error: "El usuario está baneado" }
@@ -141,11 +193,22 @@ class Auth extends BaseController {
     $user = $this->userModel->getUserByProvider('google', $googleUser['sub']);
 
     if ($user === null) {
-      $user = $this->migrateLegacyUser($googleUser['email'], 'google', $googleUser['sub']);
+      $user = $this->migrateLegacyUser(
+        $googleUser['email'],
+        'google',
+        $googleUser['sub'],
+        $googleUser['picture'] ?? null
+      );
     }
 
     if ($user === null) {
-      $user = $this->registerUser($googleUser['email'], $googleUser['name'], 'google', $googleUser['sub']);
+      $user = $this->registerUser(
+        $googleUser['email'],
+        $googleUser['name'],
+        'google',
+        $googleUser['sub'],
+        $googleUser['picture'] ?? null,
+      );
     }
 
     if ($user === null) {
@@ -197,14 +260,15 @@ class Auth extends BaseController {
       return [
         'sub'   => $data['sub'],
         'email' => $data['email'],
-        'name'  => $data['name'] ?? $data['email'],
+        'name'  => $data['given_name'] ?? $data['name'] ?? $data['email'],
+        'picture' => $data['picture'] ?? null,
       ];
     } catch (\Exception $e) {
       return null;
     }
   }
 
-  private function migrateLegacyUser($email, $provider, $providerId) {
+  private function migrateLegacyUser($email, $provider, $providerId, $avatarUrl = null) {
     $legacyUser = $this->userModel->getLegacyUserByEmail($email);
 
     if (!$legacyUser) {
@@ -216,11 +280,19 @@ class Auth extends BaseController {
       return null;
     }
 
+    if (!empty($avatarUrl)) {
+      $avatarPath = $this->downloadAvatar($legacyUser->uid, $avatarUrl);
+
+      if ($avatarPath !== null) {
+        $this->userModel->update($legacyUser->uid, ['avatar' => $avatarPath]);
+      }
+    }
+
     return $legacyUser;
   }
 
-  private function registerUser($email, $name, $provider, $providerId) {
-    $uid = generateUid();
+  private function registerUser($email, $name, $provider, $providerId, $avatarUrl = null) {
+    $uid = generate_uid();
     $userData = [
       'uid' => $uid,
       'email' => $email,
@@ -241,7 +313,90 @@ class Auth extends BaseController {
       return null;
     }
 
+    if (!empty($avatarUrl)) {
+      $avatarPath = $this->downloadAvatar($uid, $avatarUrl);
+
+      if ($avatarPath !== null) {
+        $this->userModel->update($uid, ['avatar' => $avatarPath]);
+      }
+    }
+
     return $this->userModel->getUser($uid);
+  }
+
+  private function downloadAvatar(string $uid, string $avatarUrl): ?string {
+    $avatarDirectory = FCPATH . 'images/avatar/';
+
+    if (!is_dir($avatarDirectory) && !mkdir($avatarDirectory, 0755, true) && !is_dir($avatarDirectory)) {
+      return null;
+    }
+
+    $curl = \Config\Services::curlrequest();
+
+    try {
+      $response = $curl->get($avatarUrl, ['http_errors' => false]);
+    } catch (\Exception $e) {
+      return null;
+    }
+
+    if ($response->getStatusCode() !== 200) {
+      return null;
+    }
+
+    $body = (string) $response->getBody();
+
+    if ($body === '') {
+      return null;
+    }
+
+    $contentType = strtolower(trim(explode(';', $response->getHeaderLine('Content-Type'))[0]));
+    $extension = $this->resolveAvatarExtension($contentType, $avatarUrl);
+
+    if ($extension === null) {
+      return null;
+    }
+
+    $filename = $uid . '_' . date('YmdHis') . '.' . $extension;
+    $relativePath = '/images/avatar/' . $filename;
+    $targetPath = FCPATH . 'images/avatar/' . $filename;
+
+    if (file_put_contents($targetPath, $body) === false) {
+      return null;
+    }
+
+    return $filename;
+  }
+
+  private function resolveAvatarExtension(string $contentType, string $avatarUrl): ?string {
+    $extensionsByType = [
+      'image/jpeg' => 'jpg',
+      'image/jpg' => 'jpg',
+      'image/png' => 'png',
+      'image/webp' => 'webp',
+      'image/gif' => 'gif',
+    ];
+
+    if (isset($extensionsByType[$contentType])) {
+      return $extensionsByType[$contentType];
+    }
+
+    $path = parse_url($avatarUrl, PHP_URL_PATH);
+
+    if (!is_string($path) || $path === '') {
+      return null;
+    }
+
+    $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+    if ($extension === 'jpeg') {
+      return 'jpg';
+    }
+
+    if (in_array($extension, ['jpg', 'png', 'webp', 'gif'], true)) {
+      return $extension;
+    }
+
+    return null;
   }
 
   private function generateJWT($user) {

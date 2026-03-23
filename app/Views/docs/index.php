@@ -72,6 +72,31 @@
       font-size: 0.86rem;
     }
 
+    .auth-box {
+      margin-top: 0.9rem;
+      background: #ffffffd1;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 0.7rem;
+      display: grid;
+      gap: 0.4rem;
+    }
+
+    .auth-box label {
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .auth-box input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0.62rem 0.7rem;
+      font-size: 0.9rem;
+      background: #fff;
+      font-family: var(--mono);
+    }
+
     .grid {
       margin-top: 1.2rem;
       display: grid;
@@ -269,6 +294,10 @@
         <strong>Base URL:</strong>
         <span id="base-url"></span>
       </div>
+      <div class="auth-box">
+        <label for="jwt-token">JWT Bearer Token (para endpoints protegidos)</label>
+        <input id="jwt-token" type="text" placeholder="eyJhbGciOiJIUzI1NiIs..." autocomplete="off">
+      </div>
     </section>
 
     <section class="grid" id="endpoint-grid"></section>
@@ -280,16 +309,39 @@
 
     const endpointGrid = document.getElementById('endpoint-grid');
     const baseUrl = window.location.origin + BASE_PATH;
+    const jwtInput = document.getElementById('jwt-token');
+    const AUTH_STORAGE_KEY = 'api-docs-jwt-token';
     document.getElementById('base-url').textContent = baseUrl;
+
+    jwtInput.value = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+    jwtInput.addEventListener('input', () => {
+      localStorage.setItem(AUTH_STORAGE_KEY, jwtInput.value.trim());
+    });
+
+    function getAuthHeader(endpoint) {
+      if (!endpoint.authRequired) {
+        return null;
+      }
+
+      const token = jwtInput.value.trim();
+
+      if (!token) {
+        return null;
+      }
+
+      return `Bearer ${token}`;
+    }
 
     function statusClass(status) {
       return status >= 200 && status < 300 ? 'ok' : 'error';
     }
 
-    function buildCurl(endpoint, formData) {
+    function buildCurl(endpoint, formData, authHeader = null) {
       const url = baseUrl + endpoint.path;
+      const authPart = authHeader ? ` -H "Authorization: ${authHeader.replaceAll('"', '\\"')}"` : '';
+
       if (endpoint.method === 'GET') {
-        return `curl -X GET "${url}"`;
+        return `curl -X GET "${url}"${authPart}`;
       }
 
       const params = new URLSearchParams();
@@ -299,7 +351,7 @@
         .map(([k, v]) => `-d "${k}=${String(v).replaceAll('"', '\\"')}"`)
         .join(' ');
 
-      return `curl -X POST "${url}" ${fields}`;
+      return `curl -X POST "${url}"${authPart} ${fields}`.trim();
     }
 
     async function executeEndpoint(endpoint, form, outputPre, statusBadge, copyBtn) {
@@ -311,14 +363,23 @@
         payload[field.name] = input ? input.value : '';
       });
 
+      const authHeader = getAuthHeader(endpoint);
+
       let response;
       let text;
 
       try {
         const options = { method: endpoint.method };
 
+        if (authHeader) {
+          options.headers = { Authorization: authHeader };
+        }
+
         if (endpoint.method !== 'GET') {
-          options.headers = { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' };
+          options.headers = {
+            ...(options.headers || {}),
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+          };
           options.body = new URLSearchParams(payload).toString();
         }
 
@@ -344,7 +405,7 @@
         }, null, 2);
       }
 
-      copyBtn.dataset.curl = buildCurl(endpoint, payload);
+      copyBtn.dataset.curl = buildCurl(endpoint, payload, authHeader);
     }
 
     function endpointCard(endpoint) {
@@ -363,6 +424,10 @@
         `).join('')
         : '<p class="hint">Este endpoint no necesita parámetros.</p>';
 
+      const authHint = endpoint.authRequired
+        ? '<p class="hint">Requiere header <strong>Authorization: Bearer &lt;jwt&gt;</strong>.</p>'
+        : '';
+
       card.innerHTML = `
         <header class="card-head">
           <span class="method ${endpoint.method.toLowerCase()}">${endpoint.method}</span>
@@ -371,6 +436,7 @@
         </header>
         <div class="card-body">
           <p class="desc">${endpoint.description}</p>
+          ${authHint}
           <form>
             <div class="fields">${fieldsHtml}</div>
             <div class="actions">
@@ -399,7 +465,7 @@
       });
 
       copyBtn.addEventListener('click', async () => {
-        const curl = copyBtn.dataset.curl || buildCurl(endpoint, {});
+        const curl = copyBtn.dataset.curl || buildCurl(endpoint, {}, getAuthHeader(endpoint));
         try {
           await navigator.clipboard.writeText(curl);
           copyBtn.textContent = 'cURL Copiado';

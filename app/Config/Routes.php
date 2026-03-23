@@ -23,6 +23,7 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
 
 	// Autenticación
 	$routes->post('login', 'Auth::login');
+	$routes->get('me', 'Auth::me', ['filter' => 'auth']);
 	$routes->get('login/google', 'Auth::getGoogleClientId');
 	$routes->post('login/google', 'Auth::googleLogin');
 });

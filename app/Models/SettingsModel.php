@@ -15,7 +15,7 @@ class SettingsModel extends Model {
 		'value',
 	];
 
-	public function getSetting(string $key): ?object {
+	public function getSetting(string $key): ?string {
 		$builder = $this->db->table($this->table);
 		$builder->where('key', $key);
     $row = $builder->get()->getRow();

@@ -26,6 +26,14 @@ class Doc extends BaseController {
         ],
       ],
       [
+        'name' => 'Usuario autenticado',
+        'method' => 'GET',
+        'path' => '/me',
+        'description' => 'Devuelve los datos del usuario logeado usando el JWT del header Authorization (Bearer token).',
+        'authRequired' => true,
+        'request' => [],
+      ],
+      [
         'name' => 'Obtener Google Client ID',
         'method' => 'GET',
         'path' => '/login/google',
