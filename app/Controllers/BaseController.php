@@ -32,8 +32,7 @@ abstract class BaseController extends Controller
     /**
      * @return void
      */
-    public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
-    {
+    public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger) {
         // Load here all helpers you want to be available in your controllers that extend BaseController.
         // Caution: Do not put the this below the parent::initController() call below.
         // $this->helpers = ['form', 'url'];
@@ -43,42 +42,11 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
+        helper('user');
     }
 
-    protected function getAuthorizationHeader(): ?string
-    {
-        $authHeader = trim($this->request->getHeaderLine('Authorization'));
-
-        if ($authHeader !== '') {
-            return $authHeader;
-        }
-
-        foreach (['HTTP_AUTHORIZATION', 'REDIRECT_HTTP_AUTHORIZATION'] as $serverKey) {
-            $value = $this->request->getServer($serverKey);
-
-            if (is_string($value) && trim($value) !== '') {
-                return trim($value);
-            }
-        }
-
-        if (function_exists('apache_request_headers')) {
-            $headers = apache_request_headers();
-
-            if (is_array($headers)) {
-                foreach ($headers as $name => $value) {
-                    if (strcasecmp((string) $name, 'Authorization') === 0 && is_string($value) && trim($value) !== '') {
-                        return trim($value);
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
-    protected function getUserUidFromJwt(): ?string
-    {
-        $authHeader = $this->getAuthorizationHeader();
+    protected function getUserUidFromJwt(): ?string {
+        $authHeader = user_get_authorization_header($this->request);
 
         if (empty($authHeader) || !preg_match('/^Bearer\s+(\S+)$/i', $authHeader, $matches)) {
             return null;

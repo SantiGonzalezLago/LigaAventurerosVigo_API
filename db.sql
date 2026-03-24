@@ -29,6 +29,18 @@ CREATE TABLE IF NOT EXISTS user_provider (
 		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS user_ban (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`user_uid` CHAR(11) NOT NULL,
+	`reason` VARCHAR(255) NULL,
+	`permanent` TINYINT(1) NOT NULL DEFAULT 0,
+	`date_start` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	`date_end` TIMESTAMP NULL,
+	PRIMARY KEY (`id`),
+	CONSTRAINT `fk_user_ban_user_uid`
+		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS settings (
 	`key` VARCHAR(255) NOT NULL,
 	`description` VARCHAR(255) NULL,
@@ -37,7 +49,6 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `settings` (`key`, `description`, `value`) VALUES
-('google_client_id', 'google_client_id', ''),
-('google_client_secret', 'google_client_secret', '');
+('google_client_id', 'google_client_id', '');
 
 COMMIT;

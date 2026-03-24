@@ -47,7 +47,7 @@ class Auth extends BaseController {
       ], 401);
     }
 
-    if ((int) $user->banned === 1) {
+    if (user_is_banned($user->uid)) {
       return $this->respond([
         'message' => 'El usuario está baneado',
       ], 403);
@@ -82,7 +82,7 @@ class Auth extends BaseController {
 
     $user = $this->userModel->getUser($uid);
 
-    if (!$user || (int) $user->banned === 1) {
+    if (!$user || user_is_banned($user->uid)) {
       return $this->respond([
         'message' => 'No autorizado',
       ], 401);
@@ -217,7 +217,7 @@ class Auth extends BaseController {
       ], 500);
     }
 
-    if ((int) $user->banned === 1) {
+    if (user_is_banned($user->uid)) {
       return $this->respond([
         'message' => 'El usuario está baneado',
       ], 403);
@@ -424,4 +424,5 @@ class Auth extends BaseController {
 
     return JWT::encode($payload, $key, 'HS256');
   }
+
 }
