@@ -70,4 +70,15 @@ abstract class BaseController extends Controller
 
         return (string) $decoded->user;
     }
+
+    protected function getUserFromJwt(): ?object {
+        $uid = $this->getUserUidFromJwt();
+
+        if ($uid === null) {
+            return null;
+        }
+
+        $userModel = new \App\Models\UserModel();
+        return $userModel->getUser($uid);
+    }
 }

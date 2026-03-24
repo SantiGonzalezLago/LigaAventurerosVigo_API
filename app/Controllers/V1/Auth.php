@@ -72,17 +72,9 @@ class Auth extends BaseController {
    * - 401: { message: "No autorizado" }
    */
   public function me() {
-    $uid = $this->getUserUidFromJwt();
+    $user = $this->getUserFromJwt();
 
-    if (empty($uid)) {
-      return $this->respond([
-        'message' => 'No autorizado',
-      ], 401);
-    }
-
-    $user = $this->userModel->getUser($uid);
-
-    if (!$user || user_is_banned($user->uid)) {
+    if (!$user) {
       return $this->respond([
         'message' => 'No autorizado',
       ], 401);
