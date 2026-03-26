@@ -295,7 +295,7 @@
         <span id="base-url"></span>
       </div>
       <div class="auth-box">
-        <label for="jwt-token">JWT Bearer Token (para endpoints protegidos)</label>
+        <label for="jwt-token">JWT Bearer Token</label>
         <input id="jwt-token" type="text" placeholder="eyJhbGciOiJIUzI1NiIs..." autocomplete="off">
       </div>
     </section>
@@ -336,8 +336,19 @@
       return status >= 200 && status < 300 ? 'ok' : 'error';
     }
 
+    function resolvePath(pathTemplate, formData) {
+      let path = pathTemplate;
+
+      Object.entries(formData).forEach(([k, v]) => {
+        path = path.replaceAll(`{${k}}`, encodeURIComponent(String(v ?? '')));
+      });
+
+      return path;
+    }
+
     function buildCurl(endpoint, formData, authHeader = null) {
-      const url = baseUrl + endpoint.path;
+      const resolvedPath = resolvePath(endpoint.path, formData);
+      const url = baseUrl + resolvedPath;
       const authPart = authHeader ? ` -H "Authorization: ${authHeader.replaceAll('"', '\\"')}"` : '';
 
       if (endpoint.method === 'GET') {
@@ -355,13 +366,14 @@
     }
 
     async function executeEndpoint(endpoint, form, outputPre, statusBadge, copyBtn) {
-      const url = baseUrl + endpoint.path;
       const payload = {};
 
       endpoint.request.forEach((field) => {
         const input = form.querySelector(`[name="${field.name}"]`);
         payload[field.name] = input ? input.value : '';
       });
+
+      const url = baseUrl + resolvePath(endpoint.path, payload);
 
       const authHeader = getAuthHeader(endpoint);
 
@@ -422,7 +434,7 @@
             <input type="text" name="${field.name}" value="${field.example || ''}" />
           </div>
         `).join('')
-        : '<p class="hint">Este endpoint no necesita parámetros.</p>';
+        : '';
 
       const authHint = endpoint.authRequired
         ? '<p class="hint">Requiere header <strong>Authorization: Bearer &lt;jwt&gt;</strong>.</p>'

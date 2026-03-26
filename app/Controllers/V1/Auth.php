@@ -74,12 +74,6 @@ class Auth extends BaseController {
   public function me() {
     $user = $this->getUserFromJwt();
 
-    if (!$user) {
-      return $this->respond([
-        'message' => 'No autorizado',
-      ], 401);
-    }
-
     return $this->respond([
       'message' => 'ok',
       'user' => $this->generateUserdata($user),
@@ -92,29 +86,11 @@ class Auth extends BaseController {
       'jwt' => $this->generateJWT($user),
       'name' => $user->name,
       'email' => $user->email,
-      'avatar' => $this->buildAvatarUrl($user->avatar ?? null),
+      'avatar' => build_avatar_url($user->avatar ?? null),
       'verified' => (bool) $user->verified,
       'master' => (bool) $user->master,
       'admin' => (bool) $user->admin,
     ];
-  }
-
-  private function buildAvatarUrl(?string $avatarPath): ?string {
-    if (empty($avatarPath)) {
-      return null;
-    }
-
-    if (filter_var($avatarPath, FILTER_VALIDATE_URL) !== false) {
-      return $avatarPath;
-    }
-
-    $normalizedPath = '/' . ltrim($avatarPath, '/');
-
-    if (!str_starts_with($normalizedPath, '/images/avatar/')) {
-      $normalizedPath = '/images/avatar/' . ltrim($avatarPath, '/');
-    }
-
-    return rtrim(base_url(), '/') . $normalizedPath;
   }
 
   /**
@@ -149,8 +125,8 @@ class Auth extends BaseController {
    * Recibe:
    * - id_token (string): ID token de Google obtenido en el cliente.
    *
-    * Devuelve:
-    * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+   * Devuelve:
+   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
    * - 400: { message: "error", error: "El token de Google es obligatorio" }
    * - 401: { message: "error", error: "Token de Google inválido o expirado" }
    * - 403: { message: "error", error: "El usuario está baneado" }
@@ -404,7 +380,7 @@ class Auth extends BaseController {
     }
 
     $issuedAt = time();
-    $expirationTime = $issuedAt + (90 * 24 * 60 * 60); // 90 días de validez
+    $expirationTime = $issuedAt + (48 * 60 * 60); // 48 horas de validez
 
     $payload = [
       'iss' => $issuer,

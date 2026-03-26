@@ -49,6 +49,38 @@ class Doc extends BaseController {
           ['name' => 'id_token', 'type' => 'string', 'required' => true, 'example' => 'eyJhbGciOiJSUzI1NiIs'],
         ],
       ],
+      [
+        'name' => 'Panel de control (admin)',
+        'method' => 'GET',
+        'path' => '/admin/control-panel',
+        'description' => 'Devuelve los contadores de usuarios para el panel de navegación (confirmados, no confirmados y baneados).',
+        'authRequired' => true,
+        'request' => [],
+      ],
+      [
+        'name' => 'Listado de usuarios (admin)',
+        'method' => 'POST',
+        'path' => '/admin/user-list',
+        'description' => 'Devuelve un listado paginado de usuarios con orden y búsqueda opcional.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'page', 'type' => 'int', 'required' => false, 'example' => 1],
+          ['name' => 'per_page', 'type' => 'int', 'required' => false, 'example' => 20],
+          ['name' => 'order_by', 'type' => 'string', 'required' => false, 'example' => 'date_created'],
+          ['name' => 'order_dir', 'type' => 'string', 'required' => false, 'example' => 'desc'],
+          ['name' => 'q', 'type' => 'string', 'required' => false, 'example' => ''],
+        ],
+      ],
+      [
+        'name' => 'Detalle de usuario (admin)',
+        'method' => 'GET',
+        'path' => '/admin/user/{uid}',
+        'description' => 'Devuelve los datos de un usuario y su historial de bans.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+        ],
+      ],
     ];
   }
 }

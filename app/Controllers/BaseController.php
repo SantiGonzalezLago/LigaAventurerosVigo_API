@@ -42,7 +42,7 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
-        helper('user');
+        helper(['user', 'avatar']);
     }
 
     protected function getUserUidFromJwt(): ?string {
@@ -81,4 +81,5 @@ abstract class BaseController extends Controller
         $userModel = new \App\Models\UserModel();
         return $userModel->getUser($uid);
     }
+
 }
