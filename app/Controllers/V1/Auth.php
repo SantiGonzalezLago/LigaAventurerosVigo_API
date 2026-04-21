@@ -17,6 +17,38 @@ class Auth extends BaseController {
   }
 
   /**
+   * Endpoint: GET /v1/me
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   *
+   * Devuelve:
+   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+   * - 401: { message: "No autorizado" }
+   */
+  public function me() {
+    $user = $this->getUserFromJwt();
+
+    return $this->respond([
+      'message' => 'ok',
+      'user' => $this->generateUserdata($user),
+    ], 200);
+  }
+
+  private function generateUserdata($user) {
+    return [
+      'uid' => $user->uid,
+      'jwt' => $this->generateJWT($user),
+      'name' => $user->name,
+      'email' => $user->email,
+      'avatar' => build_avatar_url($user->avatar ?? null),
+      'verified' => (bool) $user->verified,
+      'master' => (bool) $user->master,
+      'admin' => (bool) $user->admin,
+    ];
+  }
+
+  /**
    * Endpoint: POST /v1/login
    *
    * Recibe:
@@ -62,35 +94,49 @@ class Auth extends BaseController {
   }
 
   /**
-   * Endpoint: GET /v1/me
+   * Endpoint: POST /v1/login/admin
    *
    * Recibe:
-   * - Authorization: Bearer <jwt>
+   * - Authorization: Bearer <jwt> (de un usuario admin)
+   * - uid (string): UID del usuario a autenticar
    *
    * Devuelve:
    * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
    * - 401: { message: "No autorizado" }
    */
-  public function me() {
-    $user = $this->getUserFromJwt();
+  public function adminLogin() {
+    $uid = $this->request->getVar('uid');
+
+    if (empty($uid)) {
+      return $this->respond([
+        'message' => 'El UID del usuario es obligatorio',
+      ], 400);
+    }
+
+    $user = $this->userModel->getUser($uid);
+
+    if (!$user) {
+      return $this->respond([
+        'message' => 'Usuario no encontrado',
+      ], 404);
+    }
+
+    if ($user->admin) {
+      return $this->respond([
+        'message' => 'No se puede suplantar a un administrador',
+      ], 401);
+    }
+
+    if (user_is_banned($user->uid)) {
+      return $this->respond([
+        'message' => 'El usuario está baneado',
+      ], 403);
+    }
 
     return $this->respond([
       'message' => 'ok',
       'user' => $this->generateUserdata($user),
     ], 200);
-  }
-
-  private function generateUserdata($user) {
-    return [
-      'uid' => $user->uid,
-      'jwt' => $this->generateJWT($user),
-      'name' => $user->name,
-      'email' => $user->email,
-      'avatar' => build_avatar_url($user->avatar ?? null),
-      'verified' => (bool) $user->verified,
-      'master' => (bool) $user->master,
-      'admin' => (bool) $user->admin,
-    ];
   }
 
   /**

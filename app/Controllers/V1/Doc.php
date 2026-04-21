@@ -26,6 +26,16 @@ class Doc extends BaseController {
         ],
       ],
       [
+        'name' => 'Login como admin',
+        'method' => 'POST',
+        'path' => '/login/admin',
+        'description' => 'Permite a un admin autenticarse como otro usuario y obtener su JWT. Requiere Authorization: Bearer <jwt> de un usuario admin.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+        ],
+      ],
+      [
         'name' => 'Usuario autenticado',
         'method' => 'GET',
         'path' => '/me',
@@ -79,6 +89,28 @@ class Doc extends BaseController {
         'authRequired' => true,
         'request' => [
           ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+        ],
+      ],
+      [
+        'name' => 'Toggle admin (admin)',
+        'method' => 'POST',
+        'path' => '/admin/toggle-admin',
+        'description' => 'Activa o desactiva el rol admin de un usuario. Solo accesible para administradores. No permite modificar tus propios permisos de admin ni activar admin a usuarios no verificados.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+          ['name' => 'state', 'type' => 'int', 'required' => true, 'example' => 1],
+        ],
+      ],
+      [
+        'name' => 'Toggle master (admin)',
+        'method' => 'POST',
+        'path' => '/admin/toggle-master',
+        'description' => 'Activa o desactiva el rol master de un usuario. Solo accesible para administradores. No permite activar master a usuarios no verificados.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+          ['name' => 'state', 'type' => 'int', 'required' => true, 'example' => 1],
         ],
       ],
     ];

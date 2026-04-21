@@ -205,4 +205,99 @@ class Admin extends BaseController {
       'bans' => $bans,
     ], 200);
   }
+
+  /**
+   * Endpoint: POST /v1/admin/toggle-admin
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   * - uid (string): UID del usuario
+   * - state (int|string): 1 para activar admin, 0 para desactivar
+   *
+   * Devuelve:
+   * - 200: { message: "ok", uid: string, admin: boolean }
+   * - 400: { message: "..." }
+   * - 403: { message: "No puedes modificar tus propios permisos de admin" }
+   * - 404: { message: "Usuario no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function toggleAdmin() {
+    return $this->toggleUserFlag('admin');
+  }
+
+  /**
+   * Endpoint: POST /v1/admin/toggle-master
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   * - uid (string): UID del usuario
+   * - state (int|string): 1 para activar master, 0 para desactivar
+   *
+   * Devuelve:
+   * - 200: { message: "ok", uid: string, master: boolean }
+   * - 400: { message: "..." }
+   * - 404: { message: "Usuario no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function toggleMaster() {
+    return $this->toggleUserFlag('master');
+  }
+
+  private function toggleUserFlag(string $field) {
+    $uidParam = $this->request->getVar('uid');
+    $stateParam = $this->request->getVar('state');
+    $currentUserUid = $this->getUserUidFromJwt();
+
+    $uid = is_string($uidParam) ? trim($uidParam) : '';
+
+    if ($uid === '') {
+      return $this->respond([
+        'message' => 'El UID del usuario es obligatorio',
+      ], 400);
+    }
+
+    $normalizedState = is_bool($stateParam) ? (int) $stateParam : (string) $stateParam;
+
+    if (!in_array((string) $normalizedState, ['0', '1'], true)) {
+      return $this->respond([
+        'message' => 'El estado debe ser 0 o 1',
+      ], 400);
+    }
+
+    $state = (int) $normalizedState;
+
+    $user = $this->userModel->getUser($uid);
+
+    if ($user === null) {
+      return $this->respond([
+        'message' => 'Usuario no encontrado',
+      ], 404);
+    }
+
+    if ($field === 'admin' && $currentUserUid !== null && $currentUserUid === $uid) {
+      return $this->respond([
+        'message' => 'No puedes modificar tus propios permisos de admin',
+      ], 403);
+    }
+
+    if ($state === 1 && !((bool) ($user->verified ?? false))) {
+      return $this->respond([
+        'message' => 'Un usuario no verificado no puede volverse admin ni master',
+      ], 400);
+    }
+
+    $success = $this->userModel->update($uid, [$field => $state]);
+
+    if (!$success) {
+      return $this->respond([
+        'message' => 'No se pudo actualizar el usuario',
+      ], 500);
+    }
+
+    return $this->respond([
+      'message' => 'ok',
+      'uid' => $uid,
+      $field => (bool) $state,
+    ], 200);
+  }
 }
