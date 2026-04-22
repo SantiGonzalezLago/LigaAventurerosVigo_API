@@ -92,6 +92,29 @@ class Doc extends BaseController {
         ],
       ],
       [
+        'name' => 'Banear usuario (admin)',
+        'method' => 'POST',
+        'path' => '/admin/ban-user',
+        'description' => 'Registra un ban para un usuario. El campo banned_by se extrae del JWT del admin autenticado y date_start se establece automaticamente al recibir la peticion.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+          ['name' => 'permanent', 'type' => 'int', 'required' => true, 'example' => 1],
+          ['name' => 'date_end', 'type' => 'string', 'required' => false, 'example' => '2026-05-01 12:00:00'],
+          ['name' => 'reason', 'type' => 'string', 'required' => true, 'example' => 'Incumplimiento de normas'],
+        ],
+      ],
+      [
+        'name' => 'Desbanear usuario (admin)',
+        'method' => 'GET',
+        'path' => '/admin/unban/{uid}',
+        'description' => 'Desbanea a un usuario poniendo todos sus bans activos a permanente=0 y date_end a la fecha-hora actual.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'uid', 'type' => 'string', 'required' => true, 'example' => 'ABC123DEF45'],
+        ],
+      ],
+      [
         'name' => 'Toggle admin (admin)',
         'method' => 'POST',
         'path' => '/admin/toggle-admin',

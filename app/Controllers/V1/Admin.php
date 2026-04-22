@@ -168,6 +168,8 @@ class Admin extends BaseController {
    *   bans: [
    *     {
    *       id: number,
+   *       banned_by: string|null,
+   *       banned_by_name: string|null,
    *       reason: string|null,
    *       permanent: boolean,
    *       date_start: string,
@@ -203,6 +205,149 @@ class Admin extends BaseController {
       'message' => 'ok',
       'user' => $user,
       'bans' => $bans,
+    ], 200);
+  }
+
+  /**
+   * Endpoint: POST /v1/admin/ban-user
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   * - uid (string): UID del usuario a banear
+   * - permanent (int|string|bool): 1 para ban permanente, 0 para temporal
+   * - date_end (string|null): fecha fin para bans temporales (formato parseable por DateTime)
+   * - reason (string): motivo del ban
+   *
+   * Devuelve:
+   * - 200: {
+   *   message: "ok",
+   *   ban: {
+   *     uid: string,
+   *     banned_by: string,
+   *     reason: string,
+   *     permanent: boolean,
+   *     date_start: string,
+   *     date_end: string|null
+   *   }
+   * }
+   * - 400: { message: "..." }
+   * - 401: { message: "No autorizado" }
+   * - 404: { message: "Usuario no encontrado" }
+   * - 409: { message: "El usuario ya tiene un ban activo" }
+   */
+  public function banUser() {
+    $uidParam = $this->request->getVar('uid');
+    $permanentParam = $this->request->getVar('permanent');
+    $dateEndParam = $this->request->getVar('date_end');
+    $reasonParam = $this->request->getVar('reason');
+
+    $uid = is_string($uidParam) ? trim($uidParam) : '';
+    $reason = is_string($reasonParam) ? trim($reasonParam) : '';
+
+    if ($uid === '') {
+      return $this->respond(['message' => 'El UID del usuario es obligatorio'], 400);
+    }
+
+    if ($reason === '') {
+      return $this->respond(['message' => 'El motivo del ban es obligatorio'], 400);
+    }
+
+    $normalizedPermanent = is_bool($permanentParam) ? (int) $permanentParam : (string) $permanentParam;
+
+    if (!in_array((string) $normalizedPermanent, ['0', '1'], true)) {
+      return $this->respond(['message' => 'El campo permanent debe ser 0 o 1'], 400);
+    }
+
+    $permanent = ((int) $normalizedPermanent) === 1;
+
+    $user = $this->userModel->getUser($uid);
+
+    if ($user === null) {
+      return $this->respond(['message' => 'Usuario no encontrado'], 404);
+    }
+
+    if (user_is_banned($uid)) {
+      return $this->respond(['message' => 'El usuario ya tiene un ban activo'], 409);
+    }
+
+    $bannedBy = $this->getUserUidFromJwt();
+
+    if ($bannedBy === null || $bannedBy === '') {
+      return $this->respond(['message' => 'No autorizado'], 401);
+    }
+
+    $dateStart = date('Y-m-d H:i:s');
+    $dateEnd = null;
+
+    if (!$permanent) {
+      $rawDateEnd = is_string($dateEndParam) ? trim($dateEndParam) : '';
+
+      if ($rawDateEnd === '') {
+        return $this->respond(['message' => 'La fecha fin es obligatoria para bans temporales'], 400);
+      }
+
+      try {
+        $dateEndObj = new \DateTimeImmutable($rawDateEnd);
+      } catch (\Throwable $e) {
+        return $this->respond(['message' => 'La fecha fin no tiene un formato valido'], 400);
+      }
+
+      $dateEnd = $dateEndObj->format('Y-m-d H:i:s');
+
+      if ($dateEnd <= $dateStart) {
+        return $this->respond(['message' => 'La fecha fin debe ser posterior a la fecha actual'], 400);
+      }
+    }
+
+    $created = $this->userModel->createUserBan($uid, $bannedBy, $permanent, $dateEnd, $reason, $dateStart);
+
+    if (!$created) {
+      return $this->respond(['message' => 'No se pudo registrar el ban'], 500);
+    }
+
+    return $this->respond([
+      'message' => 'ok',
+      'ban' => [
+        'uid' => $uid,
+        'banned_by' => $bannedBy,
+        'reason' => $reason,
+        'permanent' => $permanent,
+        'date_start' => $dateStart,
+        'date_end' => $dateEnd,
+      ],
+    ], 200);
+  }
+
+  /**
+   * Endpoint: GET /v1/admin/unban/{uid}
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   * - uid (path param, string): UID del usuario a desbanear
+   *
+   * Devuelve:
+   * - 200: { message: "ok", uid: string, lifted: number }
+   * - 400: { message: "El usuario no tiene bans activos" }
+   * - 404: { message: "Usuario no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function unbanUser(string $uid) {
+    $user = $this->userModel->getUser($uid);
+
+    if ($user === null) {
+      return $this->respond(['message' => 'Usuario no encontrado'], 404);
+    }
+
+    if (!user_is_banned($uid)) {
+      return $this->respond(['message' => 'El usuario no tiene bans activos'], 400);
+    }
+
+    $lifted = $this->userModel->liftActiveBans($uid);
+
+    return $this->respond([
+      'message' => 'ok',
+      'uid' => $uid,
+      'lifted' => $lifted,
     ], 200);
   }
 

@@ -186,22 +186,57 @@ class UserModel extends Model {
 
     $builder = $this->db->table('user_ban');
     $builder->select([
-      'id',
-      'reason',
-      'permanent',
-      'date_start',
-      'date_end',
+      'user_ban.id',
+      'user_ban.reason',
+      'user_ban.permanent',
+      'user_ban.date_start',
+      'user_ban.date_end',
+      'user_ban.banned_by',
+      'admin_user.name AS banned_by_name',
     ]);
     $builder->select("CASE
-      WHEN date_start <= {$escapedNow} AND (permanent = 1 OR date_end > {$escapedNow}) THEN 1
+      WHEN user_ban.date_start <= {$escapedNow} AND (user_ban.permanent = 1 OR user_ban.date_end > {$escapedNow}) THEN 1
       ELSE 0
     END AS active", false);
-    $builder->where('user_uid', $uid);
+    $builder->join('users admin_user', 'admin_user.uid = user_ban.banned_by', 'left');
+    $builder->where('user_ban.user_uid', $uid);
 
     return $builder
-      ->orderBy('date_start', 'desc')
+      ->orderBy('user_ban.date_start', 'desc')
       ->get()
       ->getResult();
+  }
+
+  public function liftActiveBans(string $userUid): int {
+    $now = date('Y-m-d H:i:s');
+
+    $this->db->table('user_ban')
+      ->where('user_uid', $userUid)
+      ->where('date_start <=', $now)
+      ->groupStart()
+        ->where('permanent', 1)
+        ->orWhere('date_end >', $now)
+      ->groupEnd()
+      ->set([
+        'permanent' => 0,
+        'date_end'  => $now,
+      ])
+      ->update();
+
+    return $this->db->affectedRows();
+  }
+
+  public function createUserBan(string $userUid, string $bannedBy, bool $permanent, ?string $dateEnd, string $reason, ?string $dateStart = null): bool {
+    $builder = $this->db->table('user_ban');
+
+    return (bool) $builder->insert([
+      'user_uid' => $userUid,
+      'banned_by' => $bannedBy,
+      'reason' => $reason,
+      'permanent' => $permanent ? 1 : 0,
+      'date_start' => $dateStart ?? date('Y-m-d H:i:s'),
+      'date_end' => $permanent ? null : $dateEnd,
+    ]);
   }
 
 }
