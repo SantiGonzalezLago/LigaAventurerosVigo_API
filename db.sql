@@ -52,6 +52,13 @@ CREATE TABLE IF NOT EXISTS settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `settings` (`key`, `description`, `value`) VALUES
-('google_client_id', 'google_client_id', '');
+('google_client_id', 'google_client_id', ''),
+('google_client_secret', 'google_client_secret', ''),
+('timezone', 'Zona horaria del sistema', ''),
+('contact_email', 'Correo electrónico de contacto', ''),
+('social_link_whatsapp', 'Enlace a WhatsApp', ''),
+('social_link_instagram', 'Enlace a Instagram', ''),
+('default_players_min', 'Mínimo de jugadores por defecto', ''),
+('default_players_max', 'Máximo de jugadores por defecto', '');
 
 COMMIT;

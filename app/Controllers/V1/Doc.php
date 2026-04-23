@@ -136,6 +136,25 @@ class Doc extends BaseController {
           ['name' => 'state', 'type' => 'int', 'required' => true, 'example' => 1],
         ],
       ],
+      [
+        'name' => 'Obtener settings (admin)',
+        'method' => 'GET',
+        'path' => '/admin/settings/get',
+        'description' => 'Devuelve la lista completa de settings del sistema.',
+        'authRequired' => true,
+        'request' => [],
+      ],
+      [
+        'name' => 'Actualizar setting (admin)',
+        'method' => 'POST',
+        'path' => '/admin/settings/update',
+        'description' => 'Actualiza el valor de una setting existente identificada por su clave.',
+        'authRequired' => true,
+        'request' => [
+          ['name' => 'key', 'type' => 'string', 'required' => true, 'example' => 'test'],
+          ['name' => 'value', 'type' => 'string', 'required' => true, 'example' => 'abc123'],
+        ],
+      ],
     ];
   }
 }
