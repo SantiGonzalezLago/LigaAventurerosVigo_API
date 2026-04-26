@@ -1,0 +1,301 @@
+openapi: 3.0.2
+info:
+  title: API Liga de Aventureros Vigo
+  version: "0.1"
+  description: Documentación de la API REST de Liga de Aventureros Vigo.
+
+servers:
+  - url: /v1
+    description: Servidor principal
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: Authentication
+  - name: Admin
+
+paths:
+  /login:
+    post:
+      tags: [Authentication]
+      summary: Login con email y contraseña
+      description: Autentica al usuario con email y contraseña y devuelve el JWT de la API.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [user, password]
+              properties:
+                user:
+                  type: string
+                  example: usuario@dominio.com
+                password:
+                  type: string
+                  example: "********"
+      responses:
+        "200":
+          description: Login correcto
+
+  /login/google:
+    get:
+      tags: [Authentication]
+      summary: Obtener Google Client ID
+      description: Devuelve el google_client_id configurado en el servidor.
+      responses:
+        "200":
+          description: OK
+    post:
+      tags: [Authentication]
+      summary: Login con Google
+      description: Valida el id_token de Google, crea/recupera el usuario y devuelve JWT de la API.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [id_token]
+              properties:
+                id_token:
+                  type: string
+                  example: eyJhbGciOiJSUzI1NiIs
+      responses:
+        "200":
+          description: Login correcto
+
+  /login/admin:
+    post:
+      tags: [Authentication]
+      summary: Login como admin
+      description: Permite a un admin autenticarse como otro usuario y obtener su JWT. Requiere JWT de un usuario admin.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [uid]
+              properties:
+                uid:
+                  type: string
+                  example: ABC123DEF45
+      responses:
+        "200":
+          description: OK
+
+  /me:
+    get:
+      tags: [Authentication]
+      summary: Usuario autenticado
+      description: Devuelve los datos del usuario logeado usando el JWT del header Authorization.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+
+  /admin/control-panel:
+    get:
+      tags: [Admin]
+      summary: Panel de control (admin)
+      description: Devuelve los contadores de usuarios para el panel de navegación (confirmados, no confirmados y baneados).
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+
+  /admin/user-list:
+    post:
+      tags: [Admin]
+      summary: Listado de usuarios (admin)
+      description: Devuelve un listado paginado de usuarios con orden y búsqueda opcional.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                per_page:
+                  type: integer
+                  example: 20
+                order_by:
+                  type: string
+                  example: date_created
+                order_dir:
+                  type: string
+                  example: desc
+                q:
+                  type: string
+                  example: ""
+      responses:
+        "200":
+          description: OK
+
+  /admin/user/{uid}:
+    get:
+      tags: [Admin]
+      summary: Detalle de usuario (admin)
+      description: Devuelve los datos de un usuario y su historial de bans.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ABC123DEF45
+      responses:
+        "200":
+          description: OK
+
+  /admin/ban-user:
+    post:
+      tags: [Admin]
+      summary: Banear usuario (admin)
+      description: Registra un ban para un usuario. El campo banned_by se extrae del JWT del admin autenticado y date_start se establece automÃ¡ticamente al recibir la peticiÃ³n.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [uid, permanent, reason]
+              properties:
+                uid:
+                  type: string
+                  example: ABC123DEF45
+                permanent:
+                  type: integer
+                  example: 1
+                date_end:
+                  type: string
+                  example: "2026-05-01 12:00:00"
+                reason:
+                  type: string
+                  example: Incumplimiento de normas
+      responses:
+        "200":
+          description: OK
+
+  /admin/unban/{uid}:
+    get:
+      tags: [Admin]
+      summary: Desbanear usuario (admin)
+      description: Desbanea a un usuario poniendo todos sus bans activos a permanente=0 y date_end a la fecha-hora actual.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+          example: ABC123DEF45
+      responses:
+        "200":
+          description: OK
+
+  /admin/toggle-admin:
+    post:
+      tags: [Admin]
+      summary: Toggle admin (admin)
+      description: Activa o desactiva el rol admin de un usuario. No permite modificar tus propios permisos de admin ni activar admin a usuarios no verificados.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [uid, state]
+              properties:
+                uid:
+                  type: string
+                  example: ABC123DEF45
+                state:
+                  type: integer
+                  example: 1
+      responses:
+        "200":
+          description: OK
+
+  /admin/toggle-master:
+    post:
+      tags: [Admin]
+      summary: Toggle master (admin)
+      description: Activa o desactiva el rol master de un usuario. No permite activar master a usuarios no verificados.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [uid, state]
+              properties:
+                uid:
+                  type: string
+                  example: ABC123DEF45
+                state:
+                  type: integer
+                  example: 1
+      responses:
+        "200":
+          description: OK
+
+  /admin/settings/get:
+    get:
+      tags: [Admin]
+      summary: Obtener settings (admin)
+      description: Devuelve la lista completa de settings del sistema.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: OK
+
+  /admin/settings/update:
+    post:
+      tags: [Admin]
+      summary: Actualizar setting (admin)
+      description: Actualiza el valor de una setting existente identificada por su clave.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [key, value]
+              properties:
+                key:
+                  type: string
+                  example: test
+                value:
+                  type: string
+                  example: abc123
+      responses:
+        "200":
+          description: OK
