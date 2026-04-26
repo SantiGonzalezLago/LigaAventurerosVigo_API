@@ -3,8 +3,14 @@
 namespace App\Controllers\V1\Admin;
 
 use App\Controllers\V1\BaseApiController;
+use App\Models\UserModel;
 
 class Admin extends BaseApiController {
+  protected UserModel $userModel;
+
+  public function __construct() {
+    $this->userModel = new UserModel();
+  }
 
   /**
    * Endpoint: GET /v1/admin/control-panel
