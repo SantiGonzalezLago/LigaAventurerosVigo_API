@@ -29,16 +29,16 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   $routes->post('login/admin', 'Auth::adminLogin', ['filter' => 'authadmin']);
 
   // Admin
-  $routes->get('admin/control-panel', 'Admin::controlPanel', ['filter' => 'authadmin']);
+  $routes->get('admin/control-panel', 'Admin\\Admin::controlPanel', ['filter' => 'authadmin']);
   // Gestión de usuarios
-  $routes->post('admin/user-list', 'Admin::userList', ['filter' => 'authadmin']);
-  $routes->get('admin/user/(:segment)', 'Admin::user/$1', ['filter' => 'authadmin']);
-  $routes->post('admin/ban-user', 'Admin::banUser', ['filter' => 'authadmin']);
-  $routes->get('admin/unban/(:segment)', 'Admin::unbanUser/$1', ['filter' => 'authadmin']);
-  $routes->post('admin/toggle-admin', 'Admin::toggleAdmin', ['filter' => 'authadmin']);
-  $routes->post('admin/toggle-master', 'Admin::toggleMaster', ['filter' => 'authadmin']);
+  $routes->post('admin/user-list', 'Admin\\Users::userList', ['filter' => 'authadmin']);
+  $routes->get('admin/user/(:segment)', 'Admin\\Users::user/$1', ['filter' => 'authadmin']);
+  $routes->post('admin/ban-user', 'Admin\\Users::banUser', ['filter' => 'authadmin']);
+  $routes->get('admin/unban/(:segment)', 'Admin\\Users::unbanUser/$1', ['filter' => 'authadmin']);
+  $routes->post('admin/toggle-admin', 'Admin\\Users::toggleAdmin', ['filter' => 'authadmin']);
+  $routes->post('admin/toggle-master', 'Admin\\Users::toggleMaster', ['filter' => 'authadmin']);
   // Gestión de configuraciones
-  $routes->get('admin/settings/get', 'Admin::settingsGet', ['filter' => 'authadmin']);
-  $routes->post('admin/settings/update', 'Admin::settingsUpdate', ['filter' => 'authadmin']);
+  $routes->get('admin/settings/get', 'Admin\\Settings::settingsGet', ['filter' => 'authadmin']);
+  $routes->post('admin/settings/update', 'Admin\\Settings::settingsUpdate', ['filter' => 'authadmin']);
 
 });
