@@ -52,6 +52,24 @@ class UserModel extends Model {
     return $builder->get()->getRow();
   }
 
+  public function clearDeleteOn(string $uid): bool {
+    return (bool) $this->db->table($this->table)
+      ->where('uid', $uid)
+      ->set(['delete_on' => null])
+      ->update();
+  }
+
+  public function scheduleDeleteOn(string $uid, int $days = 15): ?string {
+    $deleteOn = (new \DateTimeImmutable('today'))->modify('+' . $days . ' days')->format('Y-m-d');
+
+    $updated = (bool) $this->db->table($this->table)
+      ->where('uid', $uid)
+      ->set(['delete_on' => $deleteOn])
+      ->update();
+
+    return $updated ? $deleteOn : null;
+  }
+
   public function insertUserProvider(string $userUid, string $provider, string $providerId): bool {
     try {
       $builder = $this->db->table('user_provider');

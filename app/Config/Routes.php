@@ -21,12 +21,19 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   // Documentación
   $routes->get('doc', 'Doc::index');
 
+  // Public
+  $routes->get('social-links', 'PublicController::socialLinks');
+
   // Autenticación
-  $routes->get('me', 'Auth::me', ['filter' => 'auth']);
   $routes->post('login', 'Auth::login');
   $routes->get('login/google', 'Auth::getGoogleClientId');
   $routes->post('login/google', 'Auth::googleLogin');
   $routes->post('login/admin', 'Auth::adminLogin', ['filter' => 'authadmin']);
+
+  // User
+  $routes->get('me', 'User::me', ['filter' => 'auth']);
+  $routes->post('update-settings', 'User::updateSettings', ['filter' => 'auth']);
+  $routes->delete('delete-user', 'User::deleteUser', ['filter' => 'auth']);
 
   // Admin
   $routes->get('admin/control-panel', 'Admin\\Admin::controlPanel', ['filter' => 'authadmin']);
@@ -40,5 +47,9 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   // Gestión de configuraciones
   $routes->get('admin/settings/get', 'Admin\\Settings::settingsGet', ['filter' => 'authadmin']);
   $routes->post('admin/settings/update', 'Admin\\Settings::settingsUpdate', ['filter' => 'authadmin']);
+
+  // Cron
+  $routes->get('cron/delete-users-by-request', 'Cron::deleteUsersByRequest', ['filter' => 'cronapikey']);
+  $routes->get('cron/delete-unused-avatars', 'Cron::deleteUnusedAvatars', ['filter' => 'cronapikey']);
 
 });

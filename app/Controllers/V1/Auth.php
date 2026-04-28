@@ -2,50 +2,14 @@
 
 namespace App\Controllers\V1;
 
-use App\Controllers\BaseController;
 use App\Models\SettingsModel;
 use App\Models\UserModel;
-use CodeIgniter\API\ResponseTrait;
-use Firebase\JWT\JWT;
 
-class Auth extends BaseController {
-  use ResponseTrait;
+class Auth extends BaseApiController {
 
   public function __construct() {
     helper('uid');
     $this->userModel = new UserModel();
-  }
-
-  /**
-   * Endpoint: GET /v1/me
-   *
-   * Recibe:
-   * - Authorization: Bearer <jwt>
-   *
-   * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
-   * - 401: { message: "No autorizado" }
-   */
-  public function me() {
-    $user = $this->getUserFromJwt();
-
-    return $this->respond([
-      'message' => 'ok',
-      'user' => $this->generateUserdata($user),
-    ], 200);
-  }
-
-  private function generateUserdata($user) {
-    return [
-      'uid' => $user->uid,
-      'jwt' => $this->generateJWT($user),
-      'name' => $user->name,
-      'email' => $user->email,
-      'avatar' => build_avatar_url($user->avatar ?? null),
-      'verified' => (bool) $user->verified,
-      'master' => (bool) $user->master,
-      'admin' => (bool) $user->admin,
-    ];
   }
 
   /**
@@ -84,6 +48,8 @@ class Auth extends BaseController {
         'message' => 'El usuario está baneado',
       ], 403);
     }
+
+    $this->userModel->clearDeleteOn($user->uid);
 
     $response = [
       'message' => 'ok',
@@ -236,6 +202,8 @@ class Auth extends BaseController {
         'message' => 'El usuario está baneado',
       ], 403);
     }
+
+    $this->userModel->clearDeleteOn($user->uid);
 
     return $this->respond([
       'message' => 'ok',
@@ -411,32 +379,6 @@ class Auth extends BaseController {
     }
 
     return null;
-  }
-
-  private function generateJWT($user) {
-    $key = env('JWT_SECRET');
-    $issuer = rtrim((string) (env('JWT_ISSUER') ?: config('App')->baseURL), '/');
-
-    if (empty($key)) {
-      throw new \RuntimeException('JWTSecret no está configurado');
-    }
-
-    if (empty($issuer)) {
-      throw new \RuntimeException('JWT issuer no está configurado');
-    }
-
-    $issuedAt = time();
-    $expirationTime = $issuedAt + (48 * 60 * 60); // 48 horas de validez
-
-    $payload = [
-      'iss' => $issuer,
-      'iat' => $issuedAt,
-      'nbf' => $issuedAt,
-      'exp' => $expirationTime,
-      'user' => $user->uid
-    ];
-
-    return JWT::encode($payload, $key, 'HS256');
   }
 
 }

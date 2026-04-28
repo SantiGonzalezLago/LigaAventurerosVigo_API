@@ -4,7 +4,7 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS users (
-	`uid` CHAR(11) NOT NULL,
+	`uid` CHAR(36) NOT NULL,
 	`email` VARCHAR(255) NOT NULL,
 	`name` VARCHAR(255) NOT NULL,
 	`avatar` VARCHAR(255) NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_provider (
-	`user_uid` CHAR(11) NOT NULL,
+	`user_uid` CHAR(36) NOT NULL,
 	`provider` VARCHAR(255) NOT NULL,
 	`provider_id` VARCHAR(255) NOT NULL,
 	PRIMARY KEY (`user_uid`, `provider`),
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS user_provider (
 
 CREATE TABLE IF NOT EXISTS user_ban (
 	`id` INT NOT NULL AUTO_INCREMENT,
-	`user_uid` CHAR(11) NOT NULL,
-	`banned_by` CHAR(11) NULL,
+	`user_uid` CHAR(36) NOT NULL,
+	`banned_by` CHAR(36) NULL,
 	`reason` VARCHAR(255) NULL,
 	`permanent` TINYINT(1) NOT NULL DEFAULT 0,
 	`date_start` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS user_ban (
 	CONSTRAINT `fk_user_ban_user_uid`
 		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT `fk_user_ban_banned_by`
-		FOREIGN KEY (`banned_by`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE SET NULL
+		FOREIGN KEY (`banned_by`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -58,6 +58,7 @@ INSERT INTO `settings` (`key`, `description`, `value`) VALUES
 ('contact_email', 'Correo electrónico de contacto', ''),
 ('social_link_whatsapp', 'Enlace a WhatsApp', ''),
 ('social_link_instagram', 'Enlace a Instagram', ''),
+('social_link_kofi', 'Enlace a Ko-fi', ''),
 ('default_players_min', 'Mínimo de jugadores por defecto', ''),
 ('default_players_max', 'Máximo de jugadores por defecto', '');
 

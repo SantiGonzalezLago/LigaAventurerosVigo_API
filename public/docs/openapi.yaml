@@ -14,12 +14,29 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    CronApiKey:
+      type: apiKey
+      in: query
+      name: key
 
 tags:
+  - name: Public
   - name: Authentication
+  - name: User
   - name: Admin
+  - name: Cron
 
 paths:
+
+  /social-links:
+    get:
+      tags: [Public]
+      summary: Enlaces sociales públicos
+      description: Devuelve, si existen, los settings `instagram`, `whatsapp` y `kofi`.
+      responses:
+        "200":
+          description: OK
+
   /login:
     post:
       tags: [Authentication]
@@ -94,7 +111,7 @@ paths:
 
   /me:
     get:
-      tags: [Authentication]
+      tags: [User]
       summary: Usuario autenticado
       description: Devuelve los datos del usuario logeado usando el JWT del header Authorization.
       security:
@@ -102,6 +119,54 @@ paths:
       responses:
         "200":
           description: OK
+
+  /update-settings:
+    post:
+      tags: [User]
+      summary: Actualizar ajustes del usuario autenticado
+      description: Actualiza de forma parcial `name`, `password` y/o `avatar` del usuario autenticado. Los tres campos son opcionales, pero la petición debe incluir al menos uno. Si `avatar` supera 256px en ancho o alto, el servidor lo redimensiona manteniendo proporción.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Juan Aventurero
+                password:
+                  type: string
+                  example: "mi_password_segura"
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida (sin campos, avatar inválido o datos no válidos)
+        "401":
+          description: No autorizado
+        "500":
+          description: Error interno del servidor
+
+  /delete-user:
+    delete:
+      tags: [User]
+      summary: Programar eliminación de cuenta
+      description: Programa la eliminación de la cuenta del usuario autenticado estableciendo `delete_on` a 15 días desde la fecha actual. No recibe parámetros.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Eliminación programada correctamente
+        "401":
+          description: No autorizado
+        "500":
+          description: Error interno del servidor
 
   /admin/control-panel:
     get:
@@ -299,3 +364,33 @@ paths:
       responses:
         "200":
           description: OK
+
+  /cron/delete-users-by-request:
+    get:
+      tags: [Cron]
+      summary: Eliminar usuarios con baja programada
+      description: Elimina todos los usuarios cuya fecha `delete_on` sea hoy o anterior.
+      security:
+        - CronApiKey: []
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: API key inválida o ausente
+        "500":
+          description: Error interno del servidor
+
+  /cron/delete-unused-avatars:
+    get:
+      tags: [Cron]
+      summary: Eliminar avatares sin uso
+      description: Elimina archivos de `public/images/avatar` no asociados a ningun usuario. Ignora el fichero `.gitignore`.
+      security:
+        - CronApiKey: []
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: API key inválida o ausente
+        "500":
+          description: Error interno del servidor

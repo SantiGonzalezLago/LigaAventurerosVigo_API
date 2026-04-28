@@ -14,6 +14,8 @@ use CodeIgniter\Filters\PerformanceMetrics;
 use CodeIgniter\Filters\SecureHeaders;
 use App\Filters\Auth;
 use App\Filters\AuthAdmin;
+use App\Filters\CronApiKey;
+use App\Filters\DevDb;
 
 class Filters extends BaseFilters
 {
@@ -38,6 +40,7 @@ class Filters extends BaseFilters
         'performance'   => PerformanceMetrics::class,
         'auth'          => Auth::class,
         'authadmin'     => AuthAdmin::class,
+        'cronapikey'    => CronApiKey::class,
     ];
 
     /**
