@@ -42,7 +42,7 @@ abstract class BaseController extends Controller
 
         // Preload any models, libraries, etc, here.
         // $this->session = service('session');
-        helper(['user', 'avatar']);
+        helper(['user', 'avatar', 'upload_log']);
     }
 
     protected function getUserUidFromJwt(): ?string {

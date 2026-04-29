@@ -37,6 +37,7 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
 
   // Admin
   $routes->get('admin/control-panel', 'Admin\\Admin::controlPanel', ['filter' => 'authadmin']);
+  $routes->post('admin/upload-log', 'Admin\\Admin::uploadLog', ['filter' => 'authadmin']);
   // Gestión de usuarios
   $routes->post('admin/user-list', 'Admin\\Users::userList', ['filter' => 'authadmin']);
   $routes->get('admin/user/(:segment)', 'Admin\\Users::user/$1', ['filter' => 'authadmin']);

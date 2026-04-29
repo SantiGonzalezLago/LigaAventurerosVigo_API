@@ -172,7 +172,7 @@ paths:
     get:
       tags: [Admin]
       summary: Panel de control (admin)
-      description: Devuelve los contadores de usuarios para el panel de navegación (confirmados, no confirmados y baneados).
+      description: Devuelve los contadores de usuarios para el panel de navegación y estadísticas básicas del log de ficheros.
       security:
         - BearerAuth: []
       responses:
@@ -365,6 +365,48 @@ paths:
         "200":
           description: OK
 
+  /admin/upload-log:
+    post:
+      tags: [Admin]
+      summary: Listado de subidas (admin)
+      description: Devuelve un listado paginado del log de subidas con orden, búsqueda y filtros opcionales por usuario y rango de fechas.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                page:
+                  type: integer
+                  example: 1
+                per_page:
+                  type: integer
+                  example: 20
+                order_by:
+                  type: string
+                  example: timestamp
+                order_dir:
+                  type: string
+                  example: desc
+                q:
+                  type: string
+                  example: ""
+                user_uid:
+                  type: string
+                  example: ""
+                date_from:
+                  type: string
+                  description: Fecha mínima del rango en formato YYYY-MM-DD.
+                date_to:
+                  type: string
+                  description: Fecha máxima del rango en formato YYYY-MM-DD.
+      responses:
+        "200":
+          description: OK
+
   /cron/delete-users-by-request:
     get:
       tags: [Cron]
@@ -384,7 +426,7 @@ paths:
     get:
       tags: [Cron]
       summary: Eliminar avatares sin uso
-      description: Elimina archivos de `public/images/avatar` no asociados a ningun usuario. Ignora el fichero `.gitignore`.
+      description: Elimina archivos de `avatar` no asociados a ningun usuario.
       security:
         - CronApiKey: []
       responses:

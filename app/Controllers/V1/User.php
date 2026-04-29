@@ -173,6 +173,7 @@ class User extends BaseApiController {
 		}
 
 		$avatarDirectory = FCPATH . 'images/avatar/';
+		$relativeDirectory = 'images/avatar';
 
 		if (!is_dir($avatarDirectory) && !mkdir($avatarDirectory, 0755, true) && !is_dir($avatarDirectory)) {
 			return null;
@@ -210,6 +211,15 @@ class User extends BaseApiController {
 				@unlink($targetPath);
 				return null;
 			}
+		}
+
+		if (!upload_log_create(
+			$uid,
+			$relativeDirectory,
+			$filename
+		)) {
+			@unlink($targetPath);
+			return null;
 		}
 
 		return $filename;

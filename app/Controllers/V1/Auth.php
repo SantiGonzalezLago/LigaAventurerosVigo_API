@@ -308,6 +308,7 @@ class Auth extends BaseApiController {
 
   private function downloadAvatar(string $uid, string $avatarUrl): ?string {
     $avatarDirectory = FCPATH . 'images/avatar/';
+    $relativeDirectory = 'images/avatar';
 
     if (!is_dir($avatarDirectory) && !mkdir($avatarDirectory, 0755, true) && !is_dir($avatarDirectory)) {
       return null;
@@ -339,10 +340,19 @@ class Auth extends BaseApiController {
     }
 
     $filename = $uid . '_' . date('YmdHis') . '.' . $extension;
-    $relativePath = '/images/avatar/' . $filename;
     $targetPath = FCPATH . 'images/avatar/' . $filename;
 
     if (file_put_contents($targetPath, $body) === false) {
+      return null;
+    }
+
+    if (!upload_log_create(
+      $uid,
+      $relativeDirectory,
+      $filename,
+      'Obtenido de Google'
+    )) {
+      @unlink($targetPath);
       return null;
     }
 

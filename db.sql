@@ -44,6 +44,21 @@ CREATE TABLE IF NOT EXISTS user_ban (
 		FOREIGN KEY (`banned_by`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS file_upload_log (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`user_uid` CHAR(36) NOT NULL,
+	`directory` VARCHAR(255) NOT NULL,
+	`file_name` VARCHAR(255) NOT NULL,
+	`remote_addr` VARCHAR(45) NOT NULL,
+	`size_bytes` BIGINT UNSIGNED NOT NULL,
+	`note` VARCHAR(255) NULL,
+	`timestamp` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (`id`),
+	KEY `idx_file_upload_log_user_uid` (`user_uid`),
+	CONSTRAINT `fk_file_upload_log_user_uid`
+		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS settings (
 	`key` VARCHAR(255) NOT NULL,
 	`description` VARCHAR(255) NULL,
