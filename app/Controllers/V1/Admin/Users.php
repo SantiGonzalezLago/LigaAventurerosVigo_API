@@ -21,7 +21,7 @@ class Users extends BaseApiController {
    * - per_page (int, optional, default: 20)
    * - order_by (string, optional, default: date_created)
    * - order_dir (string, optional, default: desc)
-   *   - allowed values for order_by: uid, name, email, verified, admin, date_created
+  *   - allowed values for order_by: uid, name, email, verified, date_created
    *   - allowed values for order_dir: asc, desc
    * - q (string, optional, default: "")
    *
@@ -44,8 +44,7 @@ class Users extends BaseApiController {
    *       email: string,
    *       avatar: string|null,
    *       verified: boolean,
-   *       admin: boolean,
-   *       master: boolean,
+  *       roles: string[],
    *       date_created: string,
    *       banned: boolean
    *     }
@@ -72,8 +71,6 @@ class Users extends BaseApiController {
       'name' => 'users.name',
       'email' => 'users.email',
       'verified' => 'users.verified',
-      'master' => 'users.master',
-      'admin' => 'users.admin',
       'date_created' => 'users.date_created',
     ];
 
@@ -92,8 +89,7 @@ class Users extends BaseApiController {
     $items = array_map(function ($user) {
       $user->avatar = build_avatar_url($user->avatar ?? null);
       $user->verified = (bool) ($user->verified ?? false);
-      $user->master = (bool) ($user->master ?? false);
-      $user->admin = (bool) ($user->admin ?? false);
+      $user->roles = $this->rolesFromCsv($user->roles ?? '');
       $user->banned = (bool) ($user->banned ?? false);
       return $user;
     }, $items);
@@ -129,8 +125,7 @@ class Users extends BaseApiController {
    *     email: string,
    *     avatar: string|null,
    *     verified: boolean,
-   *     admin: boolean,
-   *     master: boolean,
+  *     roles: string[],
    *     date_created: string,
    *     banned: boolean
    *   },
@@ -159,8 +154,7 @@ class Users extends BaseApiController {
 
     $user->avatar = build_avatar_url($user->avatar ?? null);
     $user->verified = (bool) ($user->verified ?? false);
-    $user->master = (bool) ($user->master ?? false);
-    $user->admin = (bool) ($user->admin ?? false);
+    $user->roles = $this->rolesFromCsv($user->roles ?? '');
     $user->banned = (bool) ($user->banned ?? false);
 
     $bans = $this->userModel->getUserBanHistory($uid);
@@ -329,14 +323,14 @@ class Users extends BaseApiController {
    * - state (int|string): 1 para activar admin, 0 para desactivar
    *
    * Devuelve:
-   * - 200: { message: "ok", uid: string, admin: boolean }
+   * - 200: { message: "ok", uid: string, roles: string[] }
    * - 400: { message: "..." }
    * - 403: { message: "No puedes modificar tus propios permisos de admin" }
    * - 404: { message: "Usuario no encontrado" }
    * - 401: { message: "No autorizado" }
    */
   public function toggleAdmin() {
-    return $this->toggleUserFlag('admin');
+    return $this->toggleUserRole('admin');
   }
 
   /**
@@ -348,16 +342,34 @@ class Users extends BaseApiController {
    * - state (int|string): 1 para activar master, 0 para desactivar
    *
    * Devuelve:
-   * - 200: { message: "ok", uid: string, master: boolean }
+   * - 200: { message: "ok", uid: string, roles: string[] }
    * - 400: { message: "..." }
    * - 404: { message: "Usuario no encontrado" }
    * - 401: { message: "No autorizado" }
    */
   public function toggleMaster() {
-    return $this->toggleUserFlag('master');
+    return $this->toggleUserRole('master');
   }
 
-  private function toggleUserFlag(string $field) {
+  /**
+   * Endpoint: POST /v1/admin/toggle-vip
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt>
+   * - uid (string): UID del usuario
+   * - state (int|string): 1 para activar vip, 0 para desactivar
+   *
+   * Devuelve:
+   * - 200: { message: "ok", uid: string, roles: string[] }
+   * - 400: { message: "..." }
+   * - 404: { message: "Usuario no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function toggleVip() {
+    return $this->toggleUserRole('vip');
+  }
+
+  private function toggleUserRole(string $role) {
     $uidParam = $this->request->getVar('uid');
     $stateParam = $this->request->getVar('state');
     $currentUserUid = $this->getUserUidFromJwt();
@@ -388,7 +400,7 @@ class Users extends BaseApiController {
       ], 404);
     }
 
-    if ($field === 'admin' && $currentUserUid !== null && $currentUserUid === $uid) {
+    if ($role === 'admin' && $currentUserUid !== null && $currentUserUid === $uid) {
       return $this->respond([
         'message' => 'No puedes modificar tus propios permisos de admin',
       ], 403);
@@ -396,11 +408,11 @@ class Users extends BaseApiController {
 
     if ($state === 1 && !((bool) ($user->verified ?? false))) {
       return $this->respond([
-        'message' => 'Un usuario no verificado no puede volverse admin ni master',
+        'message' => 'Un usuario no verificado no puede recibir roles de administración',
       ], 400);
     }
 
-    $success = $this->userModel->update($uid, [$field => $state]);
+    $success = $this->userModel->setUserRole($uid, $role, $state === 1);
 
     if (!$success) {
       return $this->respond([
@@ -408,10 +420,25 @@ class Users extends BaseApiController {
       ], 500);
     }
 
+    $roles = $this->userModel->getUserRoles($uid);
+
     return $this->respond([
       'message' => 'ok',
       'uid' => $uid,
-      $field => (bool) $state,
+      'roles' => $roles,
     ], 200);
+  }
+
+  private function rolesFromCsv($csv): array {
+    if (!is_string($csv) || trim($csv) === '') {
+      return [];
+    }
+
+    $roles = array_map('trim', explode(',', $csv));
+    $roles = array_values(array_filter($roles, static function (string $role) {
+      return $role !== '';
+    }));
+
+    return $roles;
   }
 }

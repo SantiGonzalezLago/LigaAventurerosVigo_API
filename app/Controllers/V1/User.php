@@ -19,7 +19,7 @@ class User extends BaseApiController {
 	 * - Authorization: Bearer <jwt>
 	 *
 	 * Devuelve:
-	 * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+	 * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, roles[] } }
 	 * - 401: { message: "No autorizado" }
 	 */
 	public function me() {
@@ -46,7 +46,7 @@ class User extends BaseApiController {
 	 * - avatar (archivo de imagen)
 	 *
 	 * Devuelve:
-	 * - 200: { message: "ok", user: { uid, name, email, avatar, verified, master, admin } }
+	 * - 200: { message: "ok", user: { uid, name, email, avatar, verified, roles[] } }
 	 * - 400: { message: "..." }
 	 * - 401: { message: "No autorizado" }
 	 */

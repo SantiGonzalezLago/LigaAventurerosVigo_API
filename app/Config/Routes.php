@@ -45,6 +45,7 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   $routes->get('admin/unban/(:segment)', 'Admin\\Users::unbanUser/$1', ['filter' => 'authadmin']);
   $routes->post('admin/toggle-admin', 'Admin\\Users::toggleAdmin', ['filter' => 'authadmin']);
   $routes->post('admin/toggle-master', 'Admin\\Users::toggleMaster', ['filter' => 'authadmin']);
+  $routes->post('admin/toggle-vip', 'Admin\\Users::toggleVip', ['filter' => 'authadmin']);
   // Gestión de configuraciones
   $routes->get('admin/settings/get', 'Admin\\Settings::settingsGet', ['filter' => 'authadmin']);
   $routes->post('admin/settings/update', 'Admin\\Settings::settingsUpdate', ['filter' => 'authadmin']);

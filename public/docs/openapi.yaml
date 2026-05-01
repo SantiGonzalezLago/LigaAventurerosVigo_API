@@ -41,7 +41,7 @@ paths:
     post:
       tags: [Authentication]
       summary: Login con email y contraseña
-      description: Autentica al usuario con email y contraseña y devuelve el JWT de la API.
+      description: Autentica al usuario con email y contraseña y devuelve el JWT de la API junto al array `roles`.
       requestBody:
         required: true
         content:
@@ -71,7 +71,7 @@ paths:
     post:
       tags: [Authentication]
       summary: Login con Google
-      description: Valida el id_token de Google, crea/recupera el usuario y devuelve JWT de la API.
+      description: Valida el id_token de Google, crea/recupera el usuario y devuelve JWT de la API junto al array `roles`.
       requestBody:
         required: true
         content:
@@ -91,7 +91,7 @@ paths:
     post:
       tags: [Authentication]
       summary: Login como admin
-      description: Permite a un admin autenticarse como otro usuario y obtener su JWT. Requiere JWT de un usuario admin.
+      description: Permite a un admin autenticarse como otro usuario y obtener su JWT. Requiere JWT de un usuario con rol `admin` y devuelve `roles` en la respuesta.
       security:
         - BearerAuth: []
       requestBody:
@@ -113,7 +113,7 @@ paths:
     get:
       tags: [User]
       summary: Usuario autenticado
-      description: Devuelve los datos del usuario logeado usando el JWT del header Authorization.
+      description: Devuelve los datos del usuario logeado usando el JWT del header Authorization, incluyendo el array `roles`.
       security:
         - BearerAuth: []
       responses:
@@ -171,7 +171,7 @@ paths:
   /admin/control-panel:
     get:
       tags: [Admin]
-      summary: Panel de control (admin)
+      summary: Panel de control
       description: Devuelve los contadores de usuarios para el panel de navegación y estadísticas básicas del log de ficheros.
       security:
         - BearerAuth: []
@@ -182,8 +182,8 @@ paths:
   /admin/user-list:
     post:
       tags: [Admin]
-      summary: Listado de usuarios (admin)
-      description: Devuelve un listado paginado de usuarios con orden y búsqueda opcional.
+      summary: Listado de usuarios
+      description: Devuelve un listado paginado de usuarios con orden y búsqueda opcional. Cada usuario incluye `roles`.
       security:
         - BearerAuth: []
       requestBody:
@@ -215,8 +215,8 @@ paths:
   /admin/user/{uid}:
     get:
       tags: [Admin]
-      summary: Detalle de usuario (admin)
-      description: Devuelve los datos de un usuario y su historial de bans.
+      summary: Detalle de usuario
+      description: Devuelve los datos de un usuario y su historial de bans. El usuario incluye `roles`.
       security:
         - BearerAuth: []
       parameters:
@@ -233,7 +233,7 @@ paths:
   /admin/ban-user:
     post:
       tags: [Admin]
-      summary: Banear usuario (admin)
+      summary: Banear usuario
       description: Registra un ban para un usuario. El campo banned_by se extrae del JWT del admin autenticado y date_start se establece automÃ¡ticamente al recibir la peticiÃ³n.
       security:
         - BearerAuth: []
@@ -264,7 +264,7 @@ paths:
   /admin/unban/{uid}:
     get:
       tags: [Admin]
-      summary: Desbanear usuario (admin)
+      summary: Desbanear usuario
       description: Desbanea a un usuario poniendo todos sus bans activos a permanente=0 y date_end a la fecha-hora actual.
       security:
         - BearerAuth: []
@@ -282,7 +282,7 @@ paths:
   /admin/toggle-admin:
     post:
       tags: [Admin]
-      summary: Toggle admin (admin)
+      summary: Toggle admin
       description: Activa o desactiva el rol admin de un usuario. No permite modificar tus propios permisos de admin ni activar admin a usuarios no verificados.
       security:
         - BearerAuth: []
@@ -307,8 +307,33 @@ paths:
   /admin/toggle-master:
     post:
       tags: [Admin]
-      summary: Toggle master (admin)
+      summary: Toggle master
       description: Activa o desactiva el rol master de un usuario. No permite activar master a usuarios no verificados.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [uid, state]
+              properties:
+                uid:
+                  type: string
+                  example: ABC123DEF45
+                state:
+                  type: integer
+                  example: 1
+      responses:
+        "200":
+          description: OK
+
+  /admin/toggle-vip:
+    post:
+      tags: [Admin]
+      summary: Toggle vip
+      description: Activa o desactiva el rol vip de un usuario.
       security:
         - BearerAuth: []
       requestBody:
@@ -332,7 +357,7 @@ paths:
   /admin/settings/get:
     get:
       tags: [Admin]
-      summary: Obtener settings (admin)
+      summary: Obtener settings
       description: Devuelve la lista completa de settings del sistema.
       security:
         - BearerAuth: []
@@ -343,7 +368,7 @@ paths:
   /admin/settings/update:
     post:
       tags: [Admin]
-      summary: Actualizar setting (admin)
+      summary: Actualizar setting
       description: Actualiza el valor de una setting existente identificada por su clave.
       security:
         - BearerAuth: []
@@ -368,7 +393,7 @@ paths:
   /admin/upload-log:
     post:
       tags: [Admin]
-      summary: Listado de subidas (admin)
+      summary: Listado de subidas
       description: Devuelve un listado paginado del log de subidas con orden, búsqueda y filtros opcionales por usuario y rango de fechas.
       security:
         - BearerAuth: []

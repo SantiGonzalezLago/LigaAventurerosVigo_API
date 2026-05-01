@@ -35,7 +35,7 @@ class UploadLogModel extends Model {
 
   public function getTotalUploadLogs(string $q = '', string $userUid = '', ?string $dateFrom = null, ?string $dateTo = null): int {
     $builder = $this->db->table($this->table);
-    $builder->join('users', 'users.uid = file_upload_log.user_uid', 'left');
+    $builder->join('user users', 'users.uid = file_upload_log.user_uid', 'left');
 
     $this->applyFilters($builder, $q, $userUid, $dateFrom, $dateTo);
 
@@ -47,7 +47,7 @@ class UploadLogModel extends Model {
 
   public function getUploadLogs(int $offset, int $limit, string $orderBy, string $orderDir, string $q = '', string $userUid = '', ?string $dateFrom = null, ?string $dateTo = null): array {
     $builder = $this->db->table($this->table);
-    $builder->join('users', 'users.uid = file_upload_log.user_uid', 'left');
+    $builder->join('user users', 'users.uid = file_upload_log.user_uid', 'left');
     $builder->select([
       'file_upload_log.id',
       'file_upload_log.user_uid',

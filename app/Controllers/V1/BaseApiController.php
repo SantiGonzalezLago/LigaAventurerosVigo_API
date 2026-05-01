@@ -10,6 +10,12 @@ abstract class BaseApiController extends BaseController {
   use ResponseTrait;
 
   protected function generateUserdata(object $user): array {
+    $roles = [];
+
+    if (isset($user->roles) && is_array($user->roles)) {
+      $roles = $user->roles;
+    }
+
     return [
       'uid' => $user->uid,
       'jwt' => $this->generateJWT($user),
@@ -17,8 +23,7 @@ abstract class BaseApiController extends BaseController {
       'email' => $user->email,
       'avatar' => build_avatar_url($user->avatar ?? null),
       'verified' => (bool) $user->verified,
-      'master' => (bool) $user->master,
-      'admin' => (bool) $user->admin,
+      'roles' => $roles,
     ];
   }
 

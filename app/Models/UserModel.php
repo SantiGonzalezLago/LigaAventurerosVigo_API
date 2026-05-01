@@ -6,7 +6,7 @@ use CodeIgniter\Model;
 
 class UserModel extends Model {
 
-  protected $table = 'users';
+  protected $table = 'user';
   protected $primaryKey = 'uid';
 
   protected $allowedFields = [
@@ -15,8 +15,6 @@ class UserModel extends Model {
     'name',
     'avatar',
     'verified',
-    'master',
-    'admin',
     'password',
     'date_created',
     'banned',
@@ -26,30 +24,88 @@ class UserModel extends Model {
   public function getUser(string $uid): ?object {
     $builder = $this->db->table($this->table);
     $builder->where('uid', $uid);
-    return $builder->get()->getRow();
+    return $this->withRoles($builder->get()->getRow());
   }
 
   public function getUserByEmail(string $email): ?object {
     $builder = $this->db->table($this->table);
     $builder->where('email', $email);
-    return $builder->get()->getRow();
+    return $this->withRoles($builder->get()->getRow());
   }
 
   public function getUserByProvider(string $provider, string $providerId): ?object {
     $builder = $this->db->table($this->table);
-    $builder->select('users.*');
-    $builder->join('user_provider', 'users.uid = user_provider.user_uid');
+    $builder->select('user.*');
+    $builder->join('user_provider', 'user.uid = user_provider.user_uid');
     $builder->where('user_provider.provider', $provider);
     $builder->where('user_provider.provider_id', $providerId);
-    return $builder->get()->getRow();
+    return $this->withRoles($builder->get()->getRow());
   }
 
   public function getLegacyUserByEmail(string $email): ?object {
     $builder = $this->db->table($this->table);
-    $builder->select('users.*');
+    $builder->select('user.*');
     $builder->where('email', $email);
-    $builder->where('NOT EXISTS (SELECT 1 FROM user_provider WHERE user_provider.user_uid = users.uid)', null, false);
-    return $builder->get()->getRow();
+    $builder->where('NOT EXISTS (SELECT 1 FROM user_provider WHERE user_provider.user_uid = user.uid)', null, false);
+    return $this->withRoles($builder->get()->getRow());
+  }
+
+  public function getUserRoles(string $uid): array {
+    $rows = $this->db->table('user_role')
+      ->select('role')
+      ->where('user_uid', $uid)
+      ->orderBy('role', 'asc')
+      ->get()
+      ->getResult();
+
+    $roles = array_map(static function ($row) {
+      return (string) ($row->role ?? '');
+    }, $rows);
+
+    return array_values(array_filter($roles, static function (string $role) {
+      return $role !== '';
+    }));
+  }
+
+  public function userHasRole(string $uid, string $role): bool {
+    if (!$this->isAllowedRole($role)) {
+      return false;
+    }
+
+    $row = $this->db->table('user_role')
+      ->select('role')
+      ->where('user_uid', $uid)
+      ->where('role', $role)
+      ->limit(1)
+      ->get()
+      ->getFirstRow();
+
+    return $row !== null;
+  }
+
+  public function setUserRole(string $uid, string $role, bool $enabled): bool {
+    if (!$this->isAllowedRole($role)) {
+      return false;
+    }
+
+    $builder = $this->db->table('user_role');
+
+    if ($enabled) {
+      if ($this->userHasRole($uid, $role)) {
+        return true;
+      }
+
+      return (bool) $builder->insert([
+        'user_uid' => $uid,
+        'role' => $role,
+      ]);
+    }
+
+    $builder->where('user_uid', $uid);
+    $builder->where('role', $role);
+    $builder->delete();
+
+    return $this->db->error()['code'] === 0;
   }
 
   public function clearDeleteOn(string $uid): bool {
@@ -92,7 +148,7 @@ class UserModel extends Model {
         SUM(CASE WHEN active_bans.user_uid IS NULL AND users.verified = 1 THEN 1 ELSE 0 END) AS confirmed,
         SUM(CASE WHEN active_bans.user_uid IS NULL AND (users.verified <> 1 OR users.verified IS NULL) THEN 1 ELSE 0 END) AS unconfirmed,
         SUM(CASE WHEN active_bans.user_uid IS NOT NULL THEN 1 ELSE 0 END) AS banned
-      FROM users
+      FROM user users
       LEFT JOIN (
         SELECT DISTINCT user_uid
         FROM user_ban
@@ -143,15 +199,15 @@ class UserModel extends Model {
 
     $dataBuilder = $this->db->table($this->table . ' users');
     $dataBuilder->join($activeBansSubquery, 'active_bans.user_uid = users.uid', 'left', false);
+    $dataBuilder->join('(SELECT user_uid, GROUP_CONCAT(role ORDER BY role SEPARATOR ",") AS roles FROM user_role GROUP BY user_uid) AS role_agg', 'role_agg.user_uid = users.uid', 'left', false);
     $dataBuilder->select([
       'users.uid',
       'users.name',
       'users.email',
       'users.avatar',
       'users.verified',
-      'users.admin',
-      'users.master',
       'users.date_created',
+      'COALESCE(role_agg.roles, "") AS roles',
     ]);
     $dataBuilder->select('CASE WHEN active_bans.user_uid IS NULL THEN 0 ELSE 1 END AS banned', false);
 
@@ -182,20 +238,33 @@ class UserModel extends Model {
 
     $builder = $this->db->table($this->table . ' users');
     $builder->join($activeBansSubquery, 'active_bans.user_uid = users.uid', 'left', false);
+    $builder->join('(SELECT user_uid, GROUP_CONCAT(role ORDER BY role SEPARATOR ",") AS roles FROM user_role GROUP BY user_uid) AS role_agg', 'role_agg.user_uid = users.uid', 'left', false);
     $builder->select([
       'users.uid',
       'users.name',
       'users.email',
       'users.avatar',
       'users.verified',
-      'users.admin',
-      'users.master',
       'users.date_created',
+      'COALESCE(role_agg.roles, "") AS roles',
     ]);
     $builder->select('CASE WHEN active_bans.user_uid IS NULL THEN 0 ELSE 1 END AS banned', false);
     $builder->where('users.uid', $uid);
 
     return $builder->get()->getRow();
+  }
+
+  private function withRoles(?object $user): ?object {
+    if ($user === null) {
+      return null;
+    }
+
+    $user->roles = $this->getUserRoles((string) $user->uid);
+    return $user;
+  }
+
+  private function isAllowedRole(string $role): bool {
+    return in_array($role, ['admin', 'master', 'vip'], true);
   }
 
   public function getUserBanHistory(string $uid): array {
@@ -216,7 +285,7 @@ class UserModel extends Model {
       WHEN user_ban.date_start <= {$escapedNow} AND (user_ban.permanent = 1 OR user_ban.date_end > {$escapedNow}) THEN 1
       ELSE 0
     END AS active", false);
-    $builder->join('users admin_user', 'admin_user.uid = user_ban.banned_by', 'left');
+    $builder->join('user admin_user', 'admin_user.uid = user_ban.banned_by', 'left');
     $builder->where('user_ban.user_uid', $uid);
 
     return $builder

@@ -3,20 +3,27 @@ SET AUTOCOMMIT = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE IF NOT EXISTS user (
 	`uid` CHAR(36) NOT NULL,
 	`email` VARCHAR(255) NOT NULL,
 	`name` VARCHAR(255) NOT NULL,
 	`avatar` VARCHAR(255) NULL,
 	`verified` TINYINT(1) NOT NULL DEFAULT 0,
-	`master` TINYINT(1) NOT NULL DEFAULT 0,
-	`admin` TINYINT(1) NOT NULL DEFAULT 0,
 	`password` VARCHAR(255) NULL,
 	`date_created` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	`banned` TINYINT(1) NOT NULL DEFAULT 0,
 	`delete_on` DATE NULL,
 	PRIMARY KEY (`uid`),
 	UNIQUE KEY `uk_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS user_role (
+	`user_uid` CHAR(36) NOT NULL,
+	`role` ENUM('admin', 'master', 'vip') NOT NULL,
+	PRIMARY KEY (`user_uid`, `role`),
+	KEY `idx_user_role_role` (`role`),
+	CONSTRAINT `fk_user_role_user_uid`
+		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_provider (
@@ -26,7 +33,7 @@ CREATE TABLE IF NOT EXISTS user_provider (
 	PRIMARY KEY (`user_uid`, `provider`),
 	UNIQUE KEY `uk_provider_provider_id` (`provider`, `provider_id`),
 	CONSTRAINT `fk_user_provider_user_uid`
-		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
+		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS user_ban (
@@ -39,9 +46,9 @@ CREATE TABLE IF NOT EXISTS user_ban (
 	`date_end` TIMESTAMP NULL,
 	PRIMARY KEY (`id`),
 	CONSTRAINT `fk_user_ban_user_uid`
-		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE,
+		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT `fk_user_ban_banned_by`
-		FOREIGN KEY (`banned_by`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
+		FOREIGN KEY (`banned_by`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS file_upload_log (
@@ -56,7 +63,7 @@ CREATE TABLE IF NOT EXISTS file_upload_log (
 	PRIMARY KEY (`id`),
 	KEY `idx_file_upload_log_user_uid` (`user_uid`),
 	CONSTRAINT `fk_file_upload_log_user_uid`
-		FOREIGN KEY (`user_uid`) REFERENCES `users` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
+		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -75,6 +82,9 @@ INSERT INTO `settings` (`key`, `description`, `value`) VALUES
 ('social_link_instagram', 'Enlace a Instagram', ''),
 ('social_link_kofi', 'Enlace a Ko-fi', ''),
 ('default_players_min', 'Mínimo de jugadores por defecto', ''),
-('default_players_max', 'Máximo de jugadores por defecto', '');
+('default_players_max', 'Máximo de jugadores por defecto', ''),
+('day_week_start', 'Día de inicio de la semana (1=Lunes, ..., 7=Domingo)', ''),
+('priority_time_hours', 'Horas desde la publicación para obtener prioridad', ''),
+('pc_limit', 'Límite de personajes activos por jugador', '');
 
 COMMIT;

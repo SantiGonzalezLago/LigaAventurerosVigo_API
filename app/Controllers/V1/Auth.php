@@ -20,7 +20,7 @@ class Auth extends BaseApiController {
    * - password (string): contraseña en texto plano.
    *
    * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+  * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, roles[] } }
    * - 400: { message: "error", error: "Usuario y contraseña son obligatorios" }
    * - 401: { message: "error", error: "Usuario o contraseña incorrectos" }
    * - 403: { message: "error", error: "El usuario está baneado" }
@@ -67,7 +67,7 @@ class Auth extends BaseApiController {
    * - uid (string): UID del usuario a autenticar
    *
    * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+  * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, roles[] } }
    * - 401: { message: "No autorizado" }
    */
   public function adminLogin() {
@@ -87,7 +87,7 @@ class Auth extends BaseApiController {
       ], 404);
     }
 
-    if ($user->admin) {
+    if ($this->userModel->userHasRole($user->uid, 'admin')) {
       return $this->respond([
         'message' => 'No se puede suplantar a un administrador',
       ], 401);
@@ -138,7 +138,7 @@ class Auth extends BaseApiController {
    * - id_token (string): ID token de Google obtenido en el cliente.
    *
    * Devuelve:
-   * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, master, admin } }
+  * - 200: { message: "ok", user: { uid, jwt, name, email, avatar, verified, roles[] } }
    * - 400: { message: "error", error: "El token de Google es obligatorio" }
    * - 401: { message: "error", error: "Token de Google inválido o expirado" }
    * - 403: { message: "error", error: "El usuario está baneado" }

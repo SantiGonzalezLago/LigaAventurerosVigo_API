@@ -58,7 +58,7 @@ class AuthAdmin implements FilterInterface {
       $userModel = new UserModel();
       $user = $userModel->getUser((string) $decoded->user);
 
-      if (!$user || !$user->admin) {
+      if (!$user || !$userModel->userHasRole($user->uid, 'admin')) {
         return $response->setJSON([
           'status' => 401,
           'error' => 'No autorizado',
