@@ -43,9 +43,11 @@ class Auth extends BaseApiController {
       ], 401);
     }
 
-    if (user_is_banned($user->uid)) {
+    $activeBan = user_get_active_ban($user->uid);
+
+    if ($activeBan !== null) {
       return $this->respond([
-        'message' => 'El usuario está baneado',
+        'message' => $this->getBanMessage($activeBan),
       ], 403);
     }
 
@@ -93,9 +95,11 @@ class Auth extends BaseApiController {
       ], 401);
     }
 
-    if (user_is_banned($user->uid)) {
+    $activeBan = user_get_active_ban($user->uid);
+
+    if ($activeBan !== null) {
       return $this->respond([
-        'message' => 'El usuario está baneado',
+        'message' => $this->getBanMessage($activeBan),
       ], 403);
     }
 
@@ -197,9 +201,11 @@ class Auth extends BaseApiController {
       ], 500);
     }
 
-    if (user_is_banned($user->uid)) {
+    $activeBan = user_get_active_ban($user->uid);
+
+    if ($activeBan !== null) {
       return $this->respond([
-        'message' => 'El usuario está baneado',
+        'message' => $this->getBanMessage($activeBan),
       ], 403);
     }
 
@@ -247,6 +253,25 @@ class Auth extends BaseApiController {
       ];
     } catch (\Exception $e) {
       return null;
+    }
+  }
+
+  private function getBanMessage(object $activeBan): string {
+    if ((bool) ($activeBan->permanent ?? false)) {
+      return 'El usuario está baneado';
+    }
+
+    $dateEnd = $activeBan->date_end ?? null;
+
+    if (!is_string($dateEnd) || trim($dateEnd) === '') {
+      return 'El usuario está baneado';
+    }
+
+    try {
+      $banEndsAt = new \DateTime($dateEnd);
+      return 'El usuario está baneado hasta el ' . $banEndsAt->format('d/m/Y');
+    } catch (\Exception $e) {
+      return 'El usuario está baneado';
     }
   }
 

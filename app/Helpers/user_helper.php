@@ -32,23 +32,28 @@ if (!function_exists('user_get_authorization_header')) {
   }
 }
 
-if (!function_exists('user_is_banned')) {
-  function user_is_banned(string $uid): bool {
+if (!function_exists('user_get_active_ban')) {
+  function user_get_active_ban(string $uid): ?object {
     $db = \Config\Database::connect();
     $now = date('Y-m-d H:i:s');
 
-    $activeBan = $db->table('user_ban')
-      ->select('id')
+    return $db->table('user_ban')
+      ->select('id, permanent, date_end')
       ->where('user_uid', $uid)
       ->where('date_start <=', $now)
       ->groupStart()
         ->where('permanent', 1)
         ->orWhere('date_end >', $now)
       ->groupEnd()
+      ->orderBy('date_start', 'desc')
       ->limit(1)
       ->get()
       ->getFirstRow();
+  }
+}
 
-    return $activeBan !== null;
+if (!function_exists('user_is_banned')) {
+  function user_is_banned(string $uid): bool {
+    return user_get_active_ban($uid) !== null;
   }
 }
