@@ -15,7 +15,7 @@ class PublicController extends BaseApiController {
    * Endpoint: GET /v1/social-links
    *
    * Devuelve:
-   * - 200: { message: "ok", social_links: { instagram?: string, whatsapp?: string, kofi?: string } }
+   * - 200: { message: "ok", social_links: { social_link_instagram?: string, social_link_whatsapp?: string, social_link_kofi?: string } }
    */
   public function socialLinks() {
     $instagram = trim((string) ($this->settingsModel->getSetting('social_link_instagram') ?? ''));
@@ -25,15 +25,15 @@ class PublicController extends BaseApiController {
     $socialLinks = [];
 
     if ($instagram !== '') {
-      $socialLinks['instagram'] = $instagram;
+      $socialLinks['social_link_instagram'] = $instagram;
     }
 
     if ($whatsapp !== '') {
-      $socialLinks['whatsapp'] = $whatsapp;
+      $socialLinks['social_link_whatsapp'] = $whatsapp;
     }
 
     if ($kofi !== '') {
-      $socialLinks['kofi'] = $kofi;
+      $socialLinks['social_link_kofi'] = $kofi;
     }
 
     return $this->respond([

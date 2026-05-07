@@ -66,13 +66,6 @@ CREATE TABLE IF NOT EXISTS file_upload_log (
 		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS settings (
-	`key` VARCHAR(255) NOT NULL,
-	`description` VARCHAR(255) NULL,
-	`value` VARCHAR(255) NOT NULL,
-	PRIMARY KEY (`key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 INSERT INTO `settings` (`key`, `description`, `value`) VALUES
 ('google_client_id', 'google_client_id', ''),
 ('google_client_secret', 'google_client_secret', ''),
@@ -84,7 +77,73 @@ INSERT INTO `settings` (`key`, `description`, `value`) VALUES
 ('default_players_min', 'Mínimo de jugadores por defecto', ''),
 ('default_players_max', 'Máximo de jugadores por defecto', ''),
 ('day_week_start', 'Día de inicio de la semana (1=Lunes, ..., 7=Domingo)', ''),
-('priority_time_hours', 'Horas desde la publicación para obtener prioridad', ''),
-('pc_limit', 'Límite de personajes activos por jugador', '');
+('priority_time_hours', 'Horas desde la publicación para obtener prioridad', '');
+
+CREATE TABLE IF NOT EXISTS system (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(255) NOT NULL,
+	`slug` VARCHAR(255) NOT NULL,
+	`icon` VARCHAR(255) NULL,
+	`pc_limit` INT NOT NULL DEFAULT 0,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uk_system_slug` (`slug`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_setting (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`system_id` INT NOT NULL,
+	`name` VARCHAR(255) NOT NULL,
+	`slug` VARCHAR(255) NOT NULL,
+	`description` VARCHAR(255) NULL,
+	`color` VARCHAR(50) NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`),
+	KEY `idx_system_setting_system_id` (`system_id`),
+	CONSTRAINT `fk_system_setting_system_id`
+		FOREIGN KEY (`system_id`) REFERENCES `system` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_tier (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`system_id` INT NOT NULL,
+	`name` VARCHAR(255) NOT NULL,
+	`min_level` INT NOT NULL,
+	`max_level` INT NOT NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`),
+	KEY `idx_system_tier_system_id` (`system_id`),
+	CONSTRAINT `fk_system_tier_system_id`
+		FOREIGN KEY (`system_id`) REFERENCES `system` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_species (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`system_id` INT NOT NULL,
+	`name` VARCHAR(255) NOT NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`),
+	KEY `idx_system_species_system_id` (`system_id`),
+	CONSTRAINT `fk_system_species_system_id`
+		FOREIGN KEY (`system_id`) REFERENCES `system` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS system_class (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`system_id` INT NOT NULL,
+	`name` VARCHAR(255) NOT NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`),
+	KEY `idx_system_class_system_id` (`system_id`),
+	CONSTRAINT `fk_system_class_system_id`
+		FOREIGN KEY (`system_id`) REFERENCES `system` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS settings (
+	`key` VARCHAR(255) NOT NULL,
+	`description` VARCHAR(255) NULL,
+	`value` VARCHAR(255) NOT NULL,
+	PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

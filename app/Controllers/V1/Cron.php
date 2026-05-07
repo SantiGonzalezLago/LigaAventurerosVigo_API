@@ -55,25 +55,34 @@ class Cron extends BaseApiController {
 		], 200);
 	}
 
-	public function deleteUnusedAvatars() {
-		$avatarDirectory = FCPATH . 'images/avatar/';
+	public function deleteUnusedFiles() {
+		$deletedAvatars = $this->cleanUnusedFilesInDirectory(
+			FCPATH . 'images/avatar/',
+			$this->getUsedAvatarFilenames()
+		);
 
-		if (!is_dir($avatarDirectory)) {
-			return $this->respond([
-				'message' => 'ok',
-				'deleted_avatars' => 0,
-			], 200);
-		}
+		$deletedIcons = $this->cleanUnusedFilesInDirectory(
+			FCPATH . 'images/system/',
+			$this->getUsedSystemIconFilenames()
+		);
 
-		$usersWithAvatar = $this->userModel
+		return $this->respond([
+			'message' => 'ok',
+			'deleted_avatars' => $deletedAvatars ?? 0,
+			'deleted_icons' => $deletedIcons ?? 0,
+		], 200);
+	}
+
+	private function getUsedAvatarFilenames(): array {
+		$rows = $this->userModel
 			->select('avatar')
 			->where('avatar IS NOT NULL', null, false)
 			->where("TRIM(avatar) <> ''", null, false)
 			->findAll();
 
-		$usedFilenames = [];
+		$used = [];
 
-		foreach ($usersWithAvatar as $row) {
+		foreach ($rows as $row) {
 			$avatar = (string) ($row['avatar'] ?? '');
 
 			if ($avatar === '') {
@@ -84,16 +93,55 @@ class Cron extends BaseApiController {
 			$filename = basename((string) ($path ?? $avatar));
 
 			if ($filename !== '' && $filename !== '.' && $filename !== '..') {
-				$usedFilenames[$filename] = true;
+				$used[$filename] = true;
 			}
 		}
 
-		$entries = scandir($avatarDirectory);
+		return $used;
+	}
+
+	private function getUsedSystemIconFilenames(): array {
+		$db = \Config\Database::connect();
+		$rows = $db->table('system')
+			->select('icon')
+			->where('icon IS NOT NULL', null, false)
+			->where("TRIM(icon) <> ''", null, false)
+			->get()
+			->getResult();
+
+		$used = [];
+
+		foreach ($rows as $row) {
+			$icon = (string) ($row->icon ?? '');
+
+			if ($icon === '') {
+				continue;
+			}
+
+			$path = parse_url($icon, PHP_URL_PATH);
+			$filename = basename((string) ($path ?? $icon));
+
+			if ($filename !== '' && $filename !== '.' && $filename !== '..') {
+				$used[$filename] = true;
+			}
+		}
+
+		return $used;
+	}
+
+	/**
+	 * Elimina los ficheros de un directorio que no estén en $usedFilenames.
+	 * Devuelve el número de ficheros eliminados, o null si no se pudo leer el directorio.
+	 */
+	private function cleanUnusedFilesInDirectory(string $directory, array $usedFilenames): ?int {
+		if (!is_dir($directory)) {
+			return 0;
+		}
+
+		$entries = scandir($directory);
 
 		if ($entries === false) {
-			return $this->respond([
-				'message' => 'No se pudo leer el directorio de avatares',
-			], 500);
+			return null;
 		}
 
 		$deletedCount = 0;
@@ -103,7 +151,7 @@ class Cron extends BaseApiController {
 				continue;
 			}
 
-			$fullPath = $avatarDirectory . $entry;
+			$fullPath = $directory . $entry;
 
 			if (!is_file($fullPath)) {
 				continue;
@@ -118,9 +166,6 @@ class Cron extends BaseApiController {
 			}
 		}
 
-		return $this->respond([
-			'message' => 'ok',
-			'deleted_avatars' => $deletedCount,
-		], 200);
+		return $deletedCount;
 	}
 }

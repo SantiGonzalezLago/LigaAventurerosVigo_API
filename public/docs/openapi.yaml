@@ -24,6 +24,7 @@ tags:
   - name: Authentication
   - name: User
   - name: Admin
+  - name: Game Systems
   - name: Cron
 
 paths:
@@ -36,6 +37,185 @@ paths:
       responses:
         "200":
           description: OK
+
+  /game-systems:
+    get:
+      tags: [Game Systems]
+      summary: Listado de sistemas de juego
+      description: Devuelve todos los sistemas de juego disponibles
+      responses:
+        "200":
+          description: OK
+
+  /game-systems/add:
+    post:
+      tags: [Game Systems]
+      summary: Añadir sistema de juego
+      description: Crea un nuevo sistema de juego. Si se envía `icon`, debe ser una imagen (jpeg, png, webp o gif); se redimensiona a 128px si supera ese tamaño.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                  example: Pathfinder
+                slug:
+                  type: string
+                  example: pathfinder
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                  description: 1 activo, 0 inactivo. Por defecto 1.
+                icon:
+                  type: string
+                  format: binary
+      responses:
+        "201":
+          description: Sistema creado
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "409":
+          description: El slug ya existe
+
+  /game-systems/update/{id}:
+    post:
+      tags: [Game Systems]
+      summary: Actualizar sistema de juego
+      description: Actualiza parcialmente un sistema de juego. Si se envía `icon`, debe ser una imagen; se redimensiona a 128px si supera ese tamaño. Si se envía `remove_icon` (sin fichero), el icono se elimina.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: Pathfinder 2e
+                slug:
+                  type: string
+                  example: pathfinder-2e
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  description: 1 activo, 0 inactivo.
+                icon:
+                  type: string
+                  format: binary
+                remove_icon:
+                  type: string
+                  description: Enviar con cualquier valor para eliminar el icono actual.
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema no encontrado
+        "409":
+          description: El slug ya existe
+
+  /game-systems/{id}/tiers:
+    get:
+      tags: [Game Systems]
+      summary: Listado de tiers de un sistema
+      description: Devuelve todos los tiers del sistema indicado por id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/tiers/update:
+    post:
+      tags: [Game Systems]
+      summary: Sincronizar tiers de un sistema
+      description: |
+        Sincroniza los tiers de un sistema en bloque sin perder ids relacionales:
+        - Actualiza los tiers que llegan con `id`
+        - Crea los tiers que llegan sin `id`
+        - Elimina los tiers existentes que no llegan en la petición
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tiers]
+              properties:
+                tiers:
+                  type: array
+                  items:
+                    type: object
+                    required: [name, min_level, max_level]
+                    properties:
+                      id:
+                        type: integer
+                        description: Si se envía, el tier se actualiza; si no, se crea uno nuevo.
+                        example: 3
+                      name:
+                        type: string
+                        example: Tier 1
+                      min_level:
+                        type: integer
+                        minimum: 1
+                        example: 1
+                      max_level:
+                        type: integer
+                        minimum: 1
+                        example: 4
+                      active:
+                        type: integer
+                        enum: [0, 1]
+                        default: 1
+                        description: 1 activo, 0 inactivo.
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema no encontrado
+        "500":
+          description: Error interno del servidor
 
   /login:
     post:
@@ -447,11 +627,11 @@ paths:
         "500":
           description: Error interno del servidor
 
-  /cron/delete-unused-avatars:
+  /cron/delete-unused-files:
     get:
       tags: [Cron]
-      summary: Eliminar avatares sin uso
-      description: Elimina archivos de `avatar` no asociados a ningun usuario.
+      summary: Eliminar ficheros sin uso
+      description: Elimina archivos de `images/avatar/` no asociados a ningún usuario y archivos de `images/system/` no asociados a ningún sistema.
       security:
         - CronApiKey: []
       responses:

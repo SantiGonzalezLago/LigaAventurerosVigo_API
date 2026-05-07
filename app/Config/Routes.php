@@ -24,6 +24,13 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   // Public
   $routes->get('social-links', 'PublicController::socialLinks');
 
+  // Game Systems (admin)
+  $routes->get('game-systems', 'GameSystems::index');
+  $routes->post('game-systems/add', 'GameSystems::add', ['filter' => 'authadmin']);
+  $routes->post('game-systems/update/(:num)', 'GameSystems::update/$1', ['filter' => 'authadmin']);
+  $routes->get('game-systems/(:num)/tiers', 'GameSystems::tiers/$1');
+  $routes->post('game-systems/(:num)/tiers/update', 'GameSystems::updateTiers/$1', ['filter' => 'authadmin']);
+
   // Autenticación
   $routes->post('login', 'Auth::login');
   $routes->get('login/google', 'Auth::getGoogleClientId');
@@ -52,6 +59,6 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
 
   // Cron
   $routes->get('cron/delete-users-by-request', 'Cron::deleteUsersByRequest', ['filter' => 'cronapikey']);
-  $routes->get('cron/delete-unused-avatars', 'Cron::deleteUnusedAvatars', ['filter' => 'cronapikey']);
+  $routes->get('cron/delete-unused-files', 'Cron::deleteUnusedFiles', ['filter' => 'cronapikey']);
 
 });
