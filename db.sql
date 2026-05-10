@@ -96,7 +96,6 @@ CREATE TABLE IF NOT EXISTS system_setting (
 	`name` VARCHAR(255) NOT NULL,
 	`slug` VARCHAR(255) NOT NULL,
 	`description` VARCHAR(255) NULL,
-	`color` VARCHAR(50) NULL,
 	`active` TINYINT(1) NOT NULL DEFAULT 1,
 	PRIMARY KEY (`id`),
 	KEY `idx_system_setting_system_id` (`system_id`),

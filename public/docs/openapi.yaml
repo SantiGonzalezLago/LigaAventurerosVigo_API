@@ -47,6 +47,24 @@ paths:
         "200":
           description: OK
 
+  /game-systems/{slug}:
+    get:
+      tags: [Game Systems]
+      summary: Detalle de un sistema de juego
+      description: Devuelve los datos de un sistema de juego identificado por su slug.
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+          example: dnd
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Sistema no encontrado
+
   /game-systems/add:
     post:
       tags: [Game Systems]
@@ -216,6 +234,404 @@ paths:
           description: Sistema no encontrado
         "500":
           description: Error interno del servidor
+
+  /game-systems/{id}/setting:
+    get:
+      tags: [Game Systems]
+      summary: Listado de settings de un sistema
+      description: Devuelve todos los settings del sistema indicado por id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/setting/add:
+    post:
+      tags: [Game Systems]
+      summary: Añadir setting a un sistema
+      description: Crea un setting en el sistema indicado por id.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name:
+                  type: string
+                  example: Forgotten Realms
+                slug:
+                  type: string
+                  example: forgotten-realms
+                description:
+                  type: string
+                  example: Ambientación clásica de D&D
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                  description: 1 activo, 0 inactivo.
+      responses:
+        "201":
+          description: Setting creado
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema no encontrado
+        "409":
+          description: El slug ya existe en este sistema
+
+  /game-systems/{id}/setting/{setting_id}/update:
+    post:
+      tags: [Game Systems]
+      summary: Actualizar setting de un sistema
+      description: Actualiza parcialmente un setting del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: setting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 4
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                slug:
+                  type: string
+                description:
+                  type: string
+                active:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o setting no encontrado
+        "409":
+          description: El slug ya existe en este sistema
+
+  /game-systems/{id}/setting/{setting_id}/delete:
+    delete:
+      tags: [Game Systems]
+      summary: Eliminar setting de un sistema
+      description: Elimina un setting del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: setting_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 4
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o setting no encontrado
+
+  /game-systems/{id}/species:
+    get:
+      tags: [Game Systems]
+      summary: Listado de especies de un sistema
+      description: Devuelve todas las especies del sistema indicado por id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/species/add:
+    post:
+      tags: [Game Systems]
+      summary: Añadir especie a un sistema
+      description: Crea una especie en el sistema indicado por id.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Elfo
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                  description: 1 activo, 0 inactivo.
+      responses:
+        "201":
+          description: Especie creada
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/species/{species_id}/update:
+    post:
+      tags: [Game Systems]
+      summary: Actualizar especie de un sistema
+      description: Actualiza parcialmente una especie del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: species_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 7
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                active:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o especie no encontrada
+
+  /game-systems/{id}/species/{species_id}/delete:
+    delete:
+      tags: [Game Systems]
+      summary: Eliminar especie de un sistema
+      description: Elimina una especie del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: species_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 7
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o especie no encontrada
+
+  /game-systems/{id}/class:
+    get:
+      tags: [Game Systems]
+      summary: Listado de clases de un sistema
+      description: Devuelve todas las clases del sistema indicado por id.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/class/add:
+    post:
+      tags: [Game Systems]
+      summary: Añadir clase a un sistema
+      description: Crea una clase en el sistema indicado por id.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Guerrero
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                  description: 1 activo, 0 inactivo.
+      responses:
+        "201":
+          description: Clase creada
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema no encontrado
+
+  /game-systems/{id}/class/{class_id}/update:
+    post:
+      tags: [Game Systems]
+      summary: Actualizar clase de un sistema
+      description: Actualiza parcialmente una clase del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 3
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                active:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o clase no encontrada
+
+  /game-systems/{id}/class/{class_id}/delete:
+    delete:
+      tags: [Game Systems]
+      summary: Eliminar clase de un sistema
+      description: Elimina una clase del sistema indicado.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+        - name: class_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 3
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: No autorizado
+        "404":
+          description: Sistema o clase no encontrada
 
   /login:
     post:

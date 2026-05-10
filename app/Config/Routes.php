@@ -26,10 +26,23 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
 
   // Game Systems (admin)
   $routes->get('game-systems', 'GameSystems::index');
+  $routes->get('game-systems/(:segment)', 'GameSystems::show/$1');
   $routes->post('game-systems/add', 'GameSystems::add', ['filter' => 'authadmin']);
   $routes->post('game-systems/update/(:num)', 'GameSystems::update/$1', ['filter' => 'authadmin']);
   $routes->get('game-systems/(:num)/tiers', 'GameSystems::tiers/$1');
   $routes->post('game-systems/(:num)/tiers/update', 'GameSystems::updateTiers/$1', ['filter' => 'authadmin']);
+  $routes->get('game-systems/(:num)/setting', 'GameSystems::settings/$1');
+  $routes->post('game-systems/(:num)/setting/add', 'GameSystems::addSetting/$1', ['filter' => 'authadmin']);
+  $routes->post('game-systems/(:num)/setting/(:num)/update', 'GameSystems::updateSetting/$1/$2', ['filter' => 'authadmin']);
+  $routes->delete('game-systems/(:num)/setting/(:num)/delete', 'GameSystems::deleteSetting/$1/$2', ['filter' => 'authadmin']);
+  $routes->get('game-systems/(:num)/species', 'GameSystems::species/$1');
+  $routes->post('game-systems/(:num)/species/add', 'GameSystems::addSpecies/$1', ['filter' => 'authadmin']);
+  $routes->post('game-systems/(:num)/species/(:num)/update', 'GameSystems::updateSpecies/$1/$2', ['filter' => 'authadmin']);
+  $routes->delete('game-systems/(:num)/species/(:num)/delete', 'GameSystems::deleteSpecies/$1/$2', ['filter' => 'authadmin']);
+  $routes->get('game-systems/(:num)/class', 'GameSystems::classes/$1');
+  $routes->post('game-systems/(:num)/class/add', 'GameSystems::addClass/$1', ['filter' => 'authadmin']);
+  $routes->post('game-systems/(:num)/class/(:num)/update', 'GameSystems::updateClass/$1/$2', ['filter' => 'authadmin']);
+  $routes->delete('game-systems/(:num)/class/(:num)/delete', 'GameSystems::deleteClass/$1/$2', ['filter' => 'authadmin']);
 
   // Autenticación
   $routes->post('login', 'Auth::login');

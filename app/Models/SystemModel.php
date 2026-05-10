@@ -27,6 +27,16 @@ class SystemModel extends Model {
     return $builder->get()->getResult();
   }
 
+  public function getBySlug(string $slug): ?object {
+    $result = $this->db->table($this->table)
+      ->where('slug', $slug)
+      ->limit(1)
+      ->get()
+      ->getRow();
+
+    return $result instanceof \stdClass ? $result : null;
+  }
+
   public function addSystem(string $name, string $slug, ?string $icon, int $pcLimit = 0, bool $active = true): int {
     $this->db->table($this->table)->insert([
       'name'     => $name,

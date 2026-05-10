@@ -40,7 +40,7 @@ abstract class BaseApiController extends BaseController {
     }
 
     $issuedAt = time();
-    $expirationTime = $issuedAt + (48 * 60 * 60); // 48 horas de validez
+    $expirationTime = $issuedAt + (7 * 24 * 60 * 60); // 7 días de validez
 
     $payload = [
       'iss' => $issuer,
