@@ -6,6 +6,7 @@ use App\Models\SystemModel;
 use App\Models\SystemSettingModel;
 use App\Models\SystemSpeciesModel;
 use App\Models\SystemClassModel;
+use App\Models\GameTypeModel;
 use App\Models\SystemTierModel;
 use CodeIgniter\HTTP\Files\UploadedFile;
 
@@ -15,6 +16,7 @@ class GameSystems extends BaseApiController {
   protected SystemSettingModel $systemSettingModel;
   protected SystemSpeciesModel $systemSpeciesModel;
   protected SystemClassModel $systemClassModel;
+  protected GameTypeModel $gameTypeModel;
 
   public function __construct() {
     $this->gameSystemModel = new SystemModel();
@@ -22,6 +24,7 @@ class GameSystems extends BaseApiController {
     $this->systemSettingModel = new SystemSettingModel();
     $this->systemSpeciesModel = new SystemSpeciesModel();
     $this->systemClassModel = new SystemClassModel();
+    $this->gameTypeModel = new GameTypeModel();
   }
 
   /**
@@ -88,7 +91,7 @@ class GameSystems extends BaseApiController {
    * Endpoint: GET /v1/game-systems/{id}/tiers
    *
    * Devuelve:
-   * - 200: { message: "ok", tiers: [{ id: int, system_id: int, name: string, min_level: int, max_level: int, active: bool }] }
+   * - 200: { message: "ok", tiers: [{ id: int, system_id: int, name: string, min_level: int, max_level: int, color: string, active: bool }] }
    * - 404: { message: "Sistema no encontrado" }
    */
   public function tiers(int $id) {
@@ -103,6 +106,7 @@ class GameSystems extends BaseApiController {
       $tier->system_id = (int) $tier->system_id;
       $tier->min_level = (int) $tier->min_level;
       $tier->max_level = (int) $tier->max_level;
+      $tier->color = (string) $tier->color;
       $tier->active = (bool) $tier->active;
 
       return $tier;
@@ -181,6 +185,7 @@ class GameSystems extends BaseApiController {
       $name = isset($tier['name']) ? trim((string) $tier['name']) : '';
       $minLevel = isset($tier['min_level']) ? (int) $tier['min_level'] : null;
       $maxLevel = isset($tier['max_level']) ? (int) $tier['max_level'] : null;
+      $color = isset($tier['color']) ? trim((string) $tier['color']) : '';
       $active = array_key_exists('active', $tier) ? ((bool) $tier['active'] ? 1 : 0) : 1;
 
       if ($name === '') {
@@ -204,6 +209,7 @@ class GameSystems extends BaseApiController {
         'name' => $name,
         'min_level' => $minLevel,
         'max_level' => $maxLevel,
+        'color' => $color,
         'active' => $active,
         '_index' => $index,
       ];
@@ -262,6 +268,7 @@ class GameSystems extends BaseApiController {
           'name' => $tier['name'],
           'min_level' => $tier['min_level'],
           'max_level' => $tier['max_level'],
+          'color' => $tier['color'],
           'active' => $tier['active'],
         ];
 
@@ -272,6 +279,7 @@ class GameSystems extends BaseApiController {
         'name' => $tier['name'],
         'min_level' => $tier['min_level'],
         'max_level' => $tier['max_level'],
+        'color' => $tier['color'],
         'active' => $tier['active'],
       ];
     }
@@ -494,10 +502,10 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: GET /v1/game-systems/{id}/species
-    *
-    * Devuelve:
-    * - 200: { message: "ok", species: [{ id: int, system_id: int, name: string, active: bool }] }
-    * - 404: { message: "Sistema no encontrado" }
+   *
+   * Devuelve:
+   * - 200: { message: "ok", species: [{ id: int, system_id: int, name: string, active: bool }] }
+   * - 404: { message: "Sistema no encontrado" }
    */
   public function species(int $id) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -522,17 +530,17 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: POST /v1/game-systems/{id}/species/add
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    * - name (string): nombre de la especie
-    * - active (bool, opcional): si la especie está activa (por defecto true)
-    *
-    * Devuelve:
-    * - 201: { message: "ok", id: int }
-    * - 400: { message: "..." }
-    * - 404: { message: "Sistema no encontrado" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string): nombre de la especie
+   * - active (bool, opcional): si la especie está activa (por defecto true)
+   *
+   * Devuelve:
+   * - 201: { message: "ok", id: int }
+   * - 400: { message: "..." }
+   * - 404: { message: "Sistema no encontrado" }
+   * - 401: { message: "No autorizado" }
    */
   public function addSpecies(int $id) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -559,17 +567,17 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: POST /v1/game-systems/{id}/species/{speciesId}/update
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    * - name (string, opcional): nuevo nombre
-    * - active (bool, opcional): si la especie está activa
-    *
-    * Devuelve:
-    * - 200: { message: "ok" }
-    * - 400: { message: "..." }
-    * - 404: { message: "Sistema no encontrado" | "Especie no encontrada" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string, opcional): nuevo nombre
+   * - active (bool, opcional): si la especie está activa
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 400: { message: "..." }
+   * - 404: { message: "Sistema no encontrado" | "Especie no encontrada" }
+   * - 401: { message: "No autorizado" }
    */
   public function updateSpecies(int $id, int $speciesId) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -610,14 +618,14 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: DELETE /v1/game-systems/{id}/species/{speciesId}/delete
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    *
-    * Devuelve:
-    * - 200: { message: "ok" }
-    * - 404: { message: "Sistema no encontrado" | "Especie no encontrada" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 404: { message: "Sistema no encontrado" | "Especie no encontrada" }
+   * - 401: { message: "No autorizado" }
    */
   public function deleteSpecies(int $id, int $speciesId) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -635,10 +643,10 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: GET /v1/game-systems/{id}/class
-    *
-    * Devuelve:
-    * - 200: { message: "ok", classes: [{ id: int, system_id: int, name: string, active: bool }] }
-    * - 404: { message: "Sistema no encontrado" }
+   *
+   * Devuelve:
+   * - 200: { message: "ok", classes: [{ id: int, system_id: int, name: string, active: bool }] }
+   * - 404: { message: "Sistema no encontrado" }
    */
   public function classes(int $id) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -663,17 +671,17 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: POST /v1/game-systems/{id}/class/add
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    * - name (string): nombre de la clase
-    * - active (bool, opcional): si la clase está activa (por defecto true)
-    *
-    * Devuelve:
-    * - 201: { message: "ok", id: int }
-    * - 400: { message: "..." }
-    * - 404: { message: "Sistema no encontrado" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string): nombre de la clase
+   * - active (bool, opcional): si la clase está activa (por defecto true)
+   *
+   * Devuelve:
+   * - 201: { message: "ok", id: int }
+   * - 400: { message: "..." }
+   * - 404: { message: "Sistema no encontrado" }
+   * - 401: { message: "No autorizado" }
    */
   public function addClass(int $id) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -700,17 +708,17 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: POST /v1/game-systems/{id}/class/{classId}/update
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    * - name (string, opcional): nuevo nombre
-    * - active (bool, opcional): si la clase está activa
-    *
-    * Devuelve:
-    * - 200: { message: "ok" }
-    * - 400: { message: "..." }
-    * - 404: { message: "Sistema no encontrado" | "Clase no encontrada" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string, opcional): nuevo nombre
+   * - active (bool, opcional): si la clase está activa
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 400: { message: "..." }
+   * - 404: { message: "Sistema no encontrado" | "Clase no encontrada" }
+   * - 401: { message: "No autorizado" }
    */
   public function updateClass(int $id, int $classId) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -751,14 +759,14 @@ class GameSystems extends BaseApiController {
 
   /**
    * Endpoint: DELETE /v1/game-systems/{id}/class/{classId}/delete
-    *
-    * Recibe:
-    * - Authorization: Bearer <jwt> (admin)
-    *
-    * Devuelve:
-    * - 200: { message: "ok" }
-    * - 404: { message: "Sistema no encontrado" | "Clase no encontrada" }
-    * - 401: { message: "No autorizado" }
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 404: { message: "Sistema no encontrado" | "Clase no encontrada" }
+   * - 401: { message: "No autorizado" }
    */
   public function deleteClass(int $id, int $classId) {
     if (!$this->gameSystemModel->existsById($id)) {
@@ -769,6 +777,128 @@ class GameSystems extends BaseApiController {
 
     if (!$deleted) {
       return $this->respond(['message' => 'Clase no encontrada'], 404);
+    }
+
+    return $this->respond(['message' => 'ok'], 200);
+  }
+
+  /**
+   * Endpoint: GET /v1/game-types
+   *
+   * Devuelve:
+   * - 200: { message: "ok", game_types: [{ id: int, name: string, active: bool }] }
+   */
+  public function types() {
+    $types = $this->gameTypeModel->getAll();
+
+    $types = array_map(static function (object $type): object {
+      $type->id = (int) $type->id;
+      $type->active = (bool) $type->active;
+
+      return $type;
+    }, $types);
+
+    return $this->respond([
+      'message' => 'ok',
+      'game_types' => $types,
+    ], 200);
+  }
+
+  /**
+   * Endpoint: POST /v1/game-types/add
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string): nombre del tipo
+   * - active (bool, opcional): si el tipo está activo (por defecto true)
+   *
+   * Devuelve:
+   * - 201: { message: "ok", id: int }
+   * - 400: { message: "..." }
+   * - 401: { message: "No autorizado" }
+   */
+  public function addType() {
+    $nameParam = $this->request->getVar('name');
+    $activeParam = $this->request->getVar('active');
+
+    $name = is_string($nameParam) ? trim($nameParam) : '';
+    $active = $activeParam !== null ? ((bool) $activeParam ? 1 : 0) : 1;
+
+    if ($name === '') {
+      return $this->respond(['message' => 'El nombre es obligatorio'], 400);
+    }
+
+    $newId = $this->gameTypeModel->addType($name, $active);
+
+    return $this->respond([
+      'message' => 'ok',
+      'id' => $newId,
+    ], 201);
+  }
+
+  /**
+   * Endpoint: POST /v1/game-types/{typeId}/update
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   * - name (string, opcional): nuevo nombre
+   * - active (bool, opcional): si el tipo está activo
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 400: { message: "..." }
+   * - 404: { message: "Tipo no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function updateType(int $typeId) {
+    $nameParam = $this->request->getVar('name');
+    $activeParam = $this->request->getVar('active');
+
+    $data = [];
+
+    if ($nameParam !== null) {
+      $name = trim((string) $nameParam);
+
+      if ($name === '') {
+        return $this->respond(['message' => 'El nombre no puede estar vacío'], 400);
+      }
+
+      $data['name'] = $name;
+    }
+
+    if ($activeParam !== null) {
+      $data['active'] = (bool) $activeParam ? 1 : 0;
+    }
+
+    if (empty($data)) {
+      return $this->respond(['message' => 'No se han enviado campos para actualizar'], 400);
+    }
+
+    $updated = $this->gameTypeModel->updateType($typeId, $data);
+
+    if (!$updated) {
+      return $this->respond(['message' => 'Tipo no encontrado'], 404);
+    }
+
+    return $this->respond(['message' => 'ok'], 200);
+  }
+
+  /**
+   * Endpoint: DELETE /v1/game-types/{typeId}/delete
+   *
+   * Recibe:
+   * - Authorization: Bearer <jwt> (admin)
+   *
+   * Devuelve:
+   * - 200: { message: "ok" }
+   * - 404: { message: "Tipo no encontrado" }
+   * - 401: { message: "No autorizado" }
+   */
+  public function deleteType(int $typeId) {
+    $deleted = $this->gameTypeModel->deleteType($typeId);
+
+    if (!$deleted) {
+      return $this->respond(['message' => 'Tipo no encontrado'], 404);
     }
 
     return $this->respond(['message' => 'ok'], 200);

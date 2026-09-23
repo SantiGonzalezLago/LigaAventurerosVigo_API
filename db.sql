@@ -66,6 +66,13 @@ CREATE TABLE IF NOT EXISTS file_upload_log (
 		FOREIGN KEY (`user_uid`) REFERENCES `user` (`uid`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS settings (
+	`key` VARCHAR(255) NOT NULL,
+	`description` VARCHAR(255) NULL,
+	`value` VARCHAR(255) NOT NULL,
+	PRIMARY KEY (`key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO `settings` (`key`, `description`, `value`) VALUES
 ('google_client_id', 'google_client_id', ''),
 ('google_client_secret', 'google_client_secret', ''),
@@ -109,6 +116,7 @@ CREATE TABLE IF NOT EXISTS system_tier (
 	`name` VARCHAR(255) NOT NULL,
 	`min_level` INT NOT NULL,
 	`max_level` INT NOT NULL,
+	`color` CHAR(7) NOT NULL,
 	`active` TINYINT(1) NOT NULL DEFAULT 1,
 	PRIMARY KEY (`id`),
 	KEY `idx_system_tier_system_id` (`system_id`),
@@ -138,11 +146,11 @@ CREATE TABLE IF NOT EXISTS system_class (
 		FOREIGN KEY (`system_id`) REFERENCES `system` (`id`) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS settings (
-	`key` VARCHAR(255) NOT NULL,
-	`description` VARCHAR(255) NULL,
-	`value` VARCHAR(255) NOT NULL,
-	PRIMARY KEY (`key`)
+CREATE TABLE IF NOT EXISTS game_type (
+	`id` INT NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(255) NOT NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 1,
+	PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

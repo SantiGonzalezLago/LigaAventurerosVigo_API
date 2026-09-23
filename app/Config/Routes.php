@@ -43,6 +43,10 @@ $routes->group('v1', ['namespace' => 'App\Controllers\V1'], static function ($ro
   $routes->post('game-systems/(:num)/class/add', 'GameSystems::addClass/$1', ['filter' => 'authadmin']);
   $routes->post('game-systems/(:num)/class/(:num)/update', 'GameSystems::updateClass/$1/$2', ['filter' => 'authadmin']);
   $routes->delete('game-systems/(:num)/class/(:num)/delete', 'GameSystems::deleteClass/$1/$2', ['filter' => 'authadmin']);
+  $routes->get('game-types', 'GameSystems::types');
+  $routes->post('game-types/add', 'GameSystems::addType', ['filter' => 'authadmin']);
+  $routes->post('game-types/(:num)/update', 'GameSystems::updateType/$1', ['filter' => 'authadmin']);
+  $routes->delete('game-types/(:num)/delete', 'GameSystems::deleteType/$1', ['filter' => 'authadmin']);
 
   // Autenticación
   $routes->post('login', 'Auth::login');

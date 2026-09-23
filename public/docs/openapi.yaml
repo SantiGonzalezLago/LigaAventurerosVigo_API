@@ -633,6 +633,104 @@ paths:
         "404":
           description: Sistema o clase no encontrada
 
+  /game-types:
+    get:
+      tags: [Game Systems]
+      summary: Listado de tipos de juego
+      description: Devuelve todos los tipos de juego disponibles.
+      responses:
+        "200":
+          description: OK
+
+  /game-types/add:
+    post:
+      tags: [Game Systems]
+      summary: Añadir tipo de juego
+      description: Crea un tipo de juego. Solo accesible para administradores.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  example: Campaña
+                active:
+                  type: integer
+                  enum: [0, 1]
+                  default: 1
+                  description: 1 activo, 0 inactivo.
+      responses:
+        "201":
+          description: Tipo creado
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+
+  /game-types/{type_id}/update:
+    post:
+      tags: [Game Systems]
+      summary: Actualizar tipo de juego
+      description: Actualiza parcialmente un tipo de juego. Solo accesible para administradores.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 2
+      requestBody:
+        required: false
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                active:
+                  type: integer
+                  enum: [0, 1]
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Petición inválida
+        "401":
+          description: No autorizado
+        "404":
+          description: Tipo no encontrado
+
+  /game-types/{type_id}/delete:
+    delete:
+      tags: [Game Systems]
+      summary: Eliminar tipo de juego
+      description: Elimina un tipo de juego. Solo accesible para administradores.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: type_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 2
+      responses:
+        "200":
+          description: OK
+        "401":
+          description: No autorizado
+        "404":
+          description: Tipo no encontrado
+
   /login:
     post:
       tags: [Authentication]

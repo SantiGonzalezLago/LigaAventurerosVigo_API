@@ -14,12 +14,13 @@ class SystemTierModel extends Model {
     'name',
     'min_level',
     'max_level',
+    'color',
     'active',
   ];
 
   public function getBySystemId(int $systemId): array {
     return $this->db->table($this->table)
-      ->select('id, system_id, name, min_level, max_level, active')
+      ->select('id, system_id, name, min_level, max_level, color, active')
       ->where('system_id', $systemId)
       ->orderBy('min_level', 'asc')
       ->orderBy('id', 'asc')
@@ -38,6 +39,7 @@ class SystemTierModel extends Model {
           'name' => $tier['name'],
           'min_level' => $tier['min_level'],
           'max_level' => $tier['max_level'],
+          'color' => $tier['color'],
           'active' => $tier['active'],
         ])
         ->update();
@@ -49,6 +51,7 @@ class SystemTierModel extends Model {
         'name' => $tier['name'],
         'min_level' => $tier['min_level'],
         'max_level' => $tier['max_level'],
+        'color' => $tier['color'],
         'active' => $tier['active'],
       ]);
     }
